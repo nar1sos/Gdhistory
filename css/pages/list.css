@@ -1,110 +1,102 @@
 /* ==========================================
-   POINTERCRATE 3-COLUMN FIX FOR LIST.CSS
+   1:1 POINTERCRATE EXACT LAYOUT (2 COLUMNS)
    ========================================== */
 
-/* 1. Главная сетка на 3 колонки */
-.list-container, 
-main, 
-.content-wrapper,
-div[class*="list"] {
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: center !important;
-    align-items: flex-start !important;
-    gap: 20px !important;
-    width: 100% !important;
-    max-width: 1280px !important;
-    margin: 20px auto !important;
-    box-sizing: border-box !important;
+/* 1. ФОН И ГЛАВНЫЙ КОНТЕЙНЕР */
+body {
+    background-color: #f4f5f7 !important; /* Светло-серый фон как в оригинале */
 }
 
-/* 2. ЛЕВАЯ КОЛОНКА (List Editors & Rules) */
-.list-sidebar, 
-.sidebar, 
-aside,
-main > div:first-child {
-    width: 240px !important;
-    min-width: 240px !important;
-    flex-shrink: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 15px !important;
+.list-container, main {
+    display: grid !important;
+    /* Левая колонка (Список) - гибкая, Правая (Сайдбар) - жестко 320px */
+    grid-template-columns: 1fr 320px !important;
+    gap: 30px !important;
+    max-width: 1200px !important;
+    margin: 40px auto !important;
+    align-items: start !important;
+    padding: 0 20px !important;
 }
 
-/* 3. СРЕДНЯЯ КОЛОНКА (Список уровней) */
-.level-list, 
-.list-content,
-main > div:nth-child(2) {
-    width: 320px !important;
-    min-width: 300px !important;
-    flex-shrink: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-}
-
-/* 4. ПРАВАЯ КОЛОНКА (Информация об уровне, Видео, Рекорды) */
-.level-view, 
-.level-details, 
-.panel-right,
-main > div:nth-child(3) {
-    flex: 1 !important;
-    min-width: 400px !important;
+/* ==========================================
+   ПРАВАЯ КОЛОНКА (Сайдбар: Модераторы, Правила)
+   ========================================== */
+/* Принудительно кидаем первый блок твоего HTML во 2-ю колонку (направо) */
+.sidebar, .list-sidebar, main > *:first-child {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 15px !important;
 }
 
-/* ------------------------------------------
-   ОФОРМЛЕНИЕ БЛОКОВ И КАРТОЧЕК
-   ------------------------------------------ */
-
-/* Все контейнеры в белые рамки */
-.sidebar > div, 
-.level-card, 
-.level-view, 
-div[class*="card"], 
-div[class*="box"] {
+/* Белые карточки сайдбара с легкой тенью */
+.sidebar > div, .sidebar-card, .rules-card {
     background: #ffffff !important;
-    border: 1px dashed #cccccc !important;
-    border-radius: 4px !important;
-    padding: 12px 15px !important;
-    box-sizing: border-box !important;
-}
-
-/* Поисковая строка */
-input[type="text"], .search-bar {
-    width: 100% !important;
-    background: #ffffff !important;
-    border: 1px dashed #cccccc !important;
-    border-radius: 4px !important;
-    padding: 8px 12px !important;
-    margin-bottom: 10px !important;
-}
-
-/* Превьюшки и Видеоплеер */
-iframe, video {
-    width: 100% !important;
-    height: 300px !important;
-    border-radius: 4px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+    padding: 25px 20px !important;
+    text-align: center !important;
+    border-radius: 2px !important;
     border: none !important;
 }
 
-.level-card img {
-    width: 100% !important;
-    height: auto !important;
-    max-height: 120px !important;
-    object-fit: cover !important;
-    border-radius: 3px !important;
+/* ==========================================
+   ЛЕВАЯ КОЛОНКА (Список уровней)
+   ========================================== */
+/* Все остальные блоки кидаем в 1-ю колонку (налево) */
+.level-list, .content, main > *:nth-child(n+2) {
+    grid-column: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15px !important;
 }
 
-/* Статистика (POINTS, QUALIFY, RECORDS) */
-.stats-container, div[class*="stats"] {
+/* Дизайн карточки уровня 1 в 1 */
+.level-card, .level-item {
+    background: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+    padding: 12px 15px !important;
     display: flex !important;
-    justify-content: space-around !important;
-    background: #f8f9fa !important;
-    border: 1px dashed #cccccc !important;
-    padding: 10px !important;
-    border-radius: 4px !important;
-    text-align: center !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 20px !important;
+    border-radius: 2px !important;
+    border: none !important;
+    transition: transform 0.1s ease;
+}
+
+.level-card:hover {
+    transform: scale(1.01);
+}
+
+/* Картинка уровня слева */
+.level-card img, .level-thumb {
+    width: 160px !important;
+    height: 90px !important;
+    object-fit: cover !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15) !important;
+    border-radius: 2px !important;
+    flex-shrink: 0 !important;
+}
+
+/* Текст внутри карточки */
+.level-card h2, .level-card .title, .level-card .rank {
+    font-size: 1.3rem !important;
+    font-weight: 800 !important;
+    margin: 0 0 4px 0 !important;
+    color: #222222 !important;
+}
+
+.level-card p, .level-card .author, .level-card .points {
+    margin: 0 !important;
+    color: #666666 !important;
+    font-size: 0.9rem !important;
+}
+
+/* Большое видео (если уровень открыт) */
+iframe, video {
+    width: 100% !important;
+    height: 350px !important;
+    border-radius: 2px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
 }
