@@ -1,68 +1,299 @@
-/* ==========================================
-   CORRECTED LAYOUT: SIDEBAR LEFT, LEVELS RIGHT
-   ========================================== */
-
-/* Контейнер: Левая колонка 280px, Правая забирает все остальное */
-.list-container, main, #app > div {
-    display: grid !important;
-    grid-template-columns: 280px 1fr !important;
-    gap: 25px !important;
-    max-width: 1200px !important;
-    margin: 30px auto !important;
-    padding: 0 15px !important;
-    align-items: start !important;
+/* ОБЩАЯ СЕТКА: СЛЕВА ЛИСТ, СПРАВА САЙДБАР */
+.pointer-wrapper {
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 0 15px;
+    font-family: Arial, sans-serif;
 }
 
-/* 1. ЛЕВАЯ КОЛОНКА (Поиск, Эдиторы, Правила) */
-.sidebar, .list-sidebar, main > *:first-child {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 15px !important;
-    width: 100% !important;
-}
-
-.sidebar > div, .sidebar-card, .editors-card, .rules-card {
-    background: #ffffff !important;
-    border-radius: 4px !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
-    padding: 15px !important;
-    box-sizing: border-box !important;
-}
-
-input[type="text"], .search-bar {
-    width: 100% !important;
-    background: #ffffff !important;
-    border: 1px solid #dcdfe6 !important;
-    border-radius: 4px !important;
-    padding: 10px 12px !important;
-    box-sizing: border-box !important;
-}
-
-/* 2. ПРАВАЯ КОЛОНКА (Уровни, Видео, Статистика) */
-.level-view, .level-list, .content, main > *:nth-child(n+2) {
-    grid-column: 2 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 15px !important;
-    width: 100% !important;
-}
-
-.level-card, .level-item {
-    background: #ffffff !important;
-    border-radius: 4px !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
-    padding: 12px 16px !important;
+.pointer-layout {
     display: flex !important;
     flex-direction: row !important;
-    align-items: center !important;
+    gap: 25px !important;
+    align-items: flex-start !important;
+}
+
+/* СЛЕВА: СПИСОК УРОВНЕЙ */
+.list-side {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+}
+
+.pointer-card {
+    background: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+    user-select: none;
+    transition: background 0.15s;
+}
+
+.pointer-card:hover, .pointer-card.active {
+    border-left-color: #0b70a4;
+    background: #f0f7ff;
+}
+
+.pointer-card.dragging {
+    opacity: 0.4;
+    border: 2px dashed #0b70a4;
+}
+
+.drag-handle {
+    font-size: 1.2rem;
+    color: #a0a0a0;
+    cursor: grab;
+    padding: 0 4px;
+}
+
+.card-thumb img {
+    width: 110px;
+    height: 62px;
+    object-fit: cover;
+    border-radius: 3px;
+    display: block;
+}
+
+.card-text {
+    flex: 1;
+}
+
+.card-title {
+    font-weight: bold;
+    font-size: 1rem;
+    color: #222;
+}
+
+.card-sub {
+    font-size: 0.82rem;
+    color: #555;
+    margin-top: 2px;
+}
+
+.card-pts {
+    font-size: 0.78rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+.btn-delete {
+    background: none;
+    border: none;
+    color: #cc0000;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 5px 8px;
+    opacity: 0.5;
+}
+
+.btn-delete:hover {
+    opacity: 1;
+}
+
+/* СПРАВА: САЙДБАР (320px) */
+.details-side {
+    width: 320px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
     gap: 15px !important;
 }
 
-iframe, video {
-    width: 100% !important;
-    height: 360px !important;
-    border-radius: 3px !important;
-    border: none !important;
+.side-box {
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.search-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-sizing: border-box;
+}
+
+.btn-primary {
+    background: #0b70a4;
+    color: white;
+    border: none;
+    padding: 9px 12px;
+    border-radius: 3px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background: #08567e;
+}
+
+.btn-secondary {
+    background: #ccc;
+    color: #333;
+    border: none;
+    padding: 9px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-small {
+    background: #0b70a4;
+    color: white;
+    border: none;
+    font-size: 0.75rem;
+    padding: 3px 7px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.level-heading {
+    margin: 0 0 8px 0;
+    font-size: 1.2rem;
+}
+
+.author-info {
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+}
+
+.author-info span {
+    color: #777;
+    font-size: 0.75rem;
+    display: inline-block;
+    width: 70px;
+}
+
+.video-container iframe {
+    width: 100%;
+    height: 165px;
+    border-radius: 3px;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+    background: #f8f9fa;
+    padding: 8px;
+    font-size: 0.85rem;
+}
+
+.records-section {
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.records-header, .mod-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.records-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.records-list li, .mod-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px dashed #f0f0f0;
+}
+
+.rec-link {
+    font-size: 0.75rem;
+    color: #0b70a4;
+}
+
+.btn-del-sm {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+}
+
+.btn-del-sm:hover { color: red; }
+
+.simple-list, .rules-list {
+    padding-left: 20px;
+    margin: 0;
+    font-size: 0.85rem;
+    color: #444;
+}
+
+.btn-reset {
+    margin-top: 15px;
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 0.75rem;
+    text-decoration: underline;
+    cursor: pointer;
+    width: 100%;
+}
+
+/* МОДАЛЬНЫЕ ОКНА (АДМИНКА) */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-body {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    width: 360px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.modal-body h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.modal-body label {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+    color: #444;
+}
+
+.modal-body input {
+    width: 100%;
+    padding: 6px 8px;
+    margin-top: 3px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-sizing: border-box;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
 }
