@@ -27,7 +27,7 @@ export default {
                 </button>
             </div>
 
-            <!-- ВКЛАДКА 1: ТОП ИГРОКОВ (РУЧНОЙ ДРАГ-ЭНД-ДРОП) -->
+            <!-- ВКЛАДКА 1: ТОП ИГРОКОВ (РУЧНОЙ DRAG & DROP) -->
             <div v-if="activeTab === 'players'" class="pointer-layout">
                 
                 <!-- ЛЕВАЯ КОЛОНКА: ЛИДЕРБОРД -->
@@ -122,34 +122,48 @@ export default {
 
             </div>
 
-            <!-- ВКЛАДКА 2: ТОП СТРАН (ПО КОЛИЧЕСТВУ ИГРОКОВ / ДЕМОНОВ) -->
+            <!-- ВКЛАДКА 2: ТОП СТРАН (С РУЧНЫМ DRAG & DROP) -->
             <div v-if="activeTab === 'countries'" class="pointer-layout">
                 <div class="list-side" style="width: 100%;">
+                    
+                    <div style="margin-bottom: 15px;">
+                        <button class="btn-primary" @click="addCountryPrompt">+ Добавить страну</button>
+                    </div>
+
                     <div 
-                        v-for="(c, index) in countryLeaderboard" 
+                        v-for="(c, index) in countriesList" 
                         :key="c.code" 
                         class="pointer-card"
-                        style="cursor: default;"
+                        :class="{ 'dragging': dragCountryIndex === index }"
+                        draggable="true"
+                        @dragstart="onCountryDragStart(index, $event)"
+                        @dragover.prevent="onCountryDragOver(index)"
+                        @drop="onCountryDrop(index)"
                     >
+                        <div class="drag-handle" title="Зажми ЛКМ и потяни, чтобы изменить место страны">⣿</div>
+
                         <img 
                             :src="getFlagUrl(c.code)" 
                             style="width: 32px; height: 22px; margin-right: 12px; border-radius: 3px;" 
                         />
+                        
                         <div class="card-text" style="flex: 1;">
                             <div class="card-title" style="font-size: 1.1rem;">
                                 #{{ index + 1 }} - {{ c.code.toUpperCase() }}
                             </div>
                             <div class="card-sub">
-                                Игроков: <strong>{{ c.playersCount }}</strong> | Всего прохождений: <strong>{{ c.totalDemons }}</strong>
+                                Игроков: <strong>{{ getCountryPlayers(c.code).length }}</strong> | Всего прохождений: <strong>{{ getCountryDemonsCount(c.code) }}</strong>
                             </div>
-                            <div class="card-sub" style="margin-top: 4px; color: #888;">
-                                Игроки: {{ c.playerNames.join(', ') }}
+                            <div class="card-sub" style="margin-top: 4px; color: #888;" v-if="getCountryPlayers(c.code).length">
+                                Игроки: {{ getCountryPlayers(c.code).map(p => p.name).join(', ') }}
                             </div>
                         </div>
+
+                        <button class="btn-delete" @click.stop="removeCountry(index)" title="Удалить страну из списка">✕</button>
                     </div>
 
-                    <div v-if="countryLeaderboard.length === 0" class="empty-msg">
-                        У игроков не указаны страны. Укажите код страны в профиле игрока!
+                    <div v-if="countriesList.length === 0" class="empty-msg">
+                        Список стран пуст. Нажми «+ Добавить страну» выше или укажи код страны в профиле игрока!
                     </div>
                 </div>
             </div>
@@ -201,10 +215,12 @@ export default {
     data: () => ({
         activeTab: "players",
         leaderboard: [],
+        countriesList: [],
         loading: true,
         selectedPlayer: null,
         searchQuery: "",
         dragIndex: null,
+        dragCountryIndex: null,
         showAddPlayerModal: false,
         showAddDemonModal: false,
         newPlayer: { name: "", country: "", avatar: "" },
@@ -216,32 +232,6 @@ export default {
             if (!this.searchQuery) return this.leaderboard;
             const q = this.searchQuery.toLowerCase().trim();
             return this.leaderboard.filter(p => p.name && p.name.toLowerCase().includes(q));
-        },
-
-        /* ТОП СТРАН СОРТИРУЕТСЯ ПО КОЛИЧЕСТВУ ИГРОКОВ В ТОПЕ */
-        countryLeaderboard() {
-            const countriesMap = {};
-
-            this.leaderboard.forEach(player => {
-                if (!player.country) return;
-                const code = player.country.toLowerCase().trim();
-                const demonCount = player.demons ? player.demons.length : 0;
-
-                if (!countriesMap[code]) {
-                    countriesMap[code] = {
-                        code,
-                        totalDemons: 0,
-                        playersCount: 0,
-                        playerNames: []
-                    };
-                }
-
-                countriesMap[code].totalDemons += demonCount;
-                countriesMap[code].playersCount += 1;
-                countriesMap[code].playerNames.push(player.name);
-            });
-
-            return Object.values(countriesMap).sort((a, b) => b.playersCount - a.playersCount || b.totalDemons - a.totalDemons);
         }
     },
 
@@ -252,6 +242,7 @@ export default {
     methods: {
         loadData() {
             const savedLeaderboard = localStorage.getItem('custom_leaderboard');
+            const savedCountries = localStorage.getItem('custom_countries');
 
             if (savedLeaderboard) {
                 this.leaderboard = JSON.parse(savedLeaderboard);
@@ -263,6 +254,13 @@ export default {
                 ];
             }
 
+            if (savedCountries) {
+                this.countriesList = JSON.parse(savedCountries);
+            } else {
+                // Инициализируем список стран из уже имеющихся игроков
+                this.syncCountriesFromPlayers();
+            }
+
             if (this.leaderboard.length > 0) {
                 this.selectedPlayer = this.leaderboard[0];
             }
@@ -271,6 +269,45 @@ export default {
 
         saveData() {
             localStorage.setItem('custom_leaderboard', JSON.stringify(this.leaderboard));
+            localStorage.setItem('custom_countries', JSON.stringify(this.countriesList));
+        },
+
+        syncCountriesFromPlayers() {
+            const existingCodes = new Set(this.countriesList.map(c => c.code));
+            this.leaderboard.forEach(p => {
+                if (p.country && !existingCodes.has(p.country.toLowerCase().trim())) {
+                    const code = p.country.toLowerCase().trim();
+                    this.countriesList.push({ code });
+                    existingCodes.add(code);
+                }
+            });
+        },
+
+        getCountryPlayers(countryCode) {
+            return this.leaderboard.filter(p => p.country && p.country.toLowerCase().trim() === countryCode.toLowerCase().trim());
+        },
+
+        getCountryDemonsCount(countryCode) {
+            const players = this.getCountryPlayers(countryCode);
+            return players.reduce((sum, p) => sum + (p.demons ? p.demons.length : 0), 0);
+        },
+
+        addCountryPrompt() {
+            const code = prompt("Введите 2-буквенный код страны (например: ru, us, ua, kr, de):");
+            if (code) {
+                const formattedCode = code.toLowerCase().trim();
+                if (!this.countriesList.some(c => c.code === formattedCode)) {
+                    this.countriesList.push({ code: formattedCode });
+                    this.saveData();
+                }
+            }
+        },
+
+        removeCountry(index) {
+            if (confirm(`Удалить страну "${this.countriesList[index].code.toUpperCase()}" из списка?`)) {
+                this.countriesList.splice(index, 1);
+                this.saveData();
+            }
         },
 
         formatPercent(val) {
@@ -289,11 +326,12 @@ export default {
             const newCountry = prompt("Введите 2-буквенный код страны (например: ru, us, ua, kr, de):", player.country || "");
             if (newCountry !== null) {
                 player.country = newCountry.toLowerCase().trim();
+                this.syncCountriesFromPlayers();
                 this.saveData();
             }
         },
 
-        /* DRAG & DROP ДЛЯ ИЗМЕНЕНИЯ МЕСТА */
+        /* DRAG & DROP ДЛЯ ИГРОКОВ */
         onDragStart(index, event) {
             this.dragIndex = index;
             event.dataTransfer.effectAllowed = "move";
@@ -311,18 +349,39 @@ export default {
             this.saveData();
         },
 
+        /* DRAG & DROP ДЛЯ СТРАН */
+        onCountryDragStart(index, event) {
+            this.dragCountryIndex = index;
+            event.dataTransfer.effectAllowed = "move";
+        },
+
+        onCountryDragOver(index) {
+            if (this.dragCountryIndex === null || this.dragCountryIndex === index) return;
+            const movedCountry = this.countriesList.splice(this.dragCountryIndex, 1)[0];
+            this.countriesList.splice(index, 0, movedCountry);
+            this.dragCountryIndex = index;
+        },
+
+        onCountryDrop() {
+            this.dragCountryIndex = null;
+            this.saveData();
+        },
+
         /* ИГРОКИ И АВАТАРКИ */
         addPlayer() {
+            const countryCode = this.newPlayer.country ? this.newPlayer.country.toLowerCase().trim() : "";
             const playerObj = {
                 id: Date.now(),
                 name: this.newPlayer.name,
-                country: this.newPlayer.country ? this.newPlayer.country.toLowerCase().trim() : "",
+                country: countryCode,
                 avatar: this.newPlayer.avatar,
                 demons: []
             };
 
             this.leaderboard.push(playerObj);
             this.selectedPlayer = playerObj;
+            
+            this.syncCountriesFromPlayers();
             this.saveData();
 
             this.showAddPlayerModal = false;
