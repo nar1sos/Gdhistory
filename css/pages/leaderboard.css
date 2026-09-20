@@ -1,284 +1,314 @@
 /* ==========================================
-   POINTERCRATE STYLE FOR LEADERBOARD
+   POINTERCRATE LEADERBOARD STYLES
    ========================================== */
 
-/* Основной контейнер */
-.leaderboard-container {
-    display: flex;
-    gap: 20px;
-    max-width: 1200px;
-    margin: 40px auto;
-    padding: 0 16px;
-    box-sizing: border-box;
-    align-items: flex-start;
+.pointer-wrapper {
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 0 15px;
+    font-family: Arial, sans-serif;
 }
 
-/* Левая часть — Профиль */
-.profile-card {
-    flex: 1;
-    background: #ffffff !important;
-    border: 1px dashed #cccccc !important;
-    border-radius: 4px !important;
-    padding: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+.pointer-layout {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 25px !important;
+    align-items: flex-start !important;
 }
 
-/* Шапка профиля */
-.profile-header {
+/* ==========================================
+   1. ЛЕВАЯ КОЛОНКА: СПИСОК ИГРОКОВ (LEADERBOARD)
+   ========================================== */
+
+.list-side {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+}
+
+.pointer-card {
+    background: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 8px 12px;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+    user-select: none;
+    transition: background 0.15s;
 }
 
-.avatar-ring {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    border: 2px solid #e1e8ed !important;
-    overflow: hidden;
-    background: #f8f9fa !important;
+.pointer-card:hover, .pointer-card.active {
+    border-left-color: #0b70a4;
+    background: #f0f7ff;
+}
+
+/* DRAG AND DROP */
+.pointer-card.dragging {
+    opacity: 0.4;
+    border: 2px dashed #0b70a4;
+}
+
+.drag-handle {
+    font-size: 1.2rem;
+    color: #a0a0a0;
+    cursor: grab;
+    padding: 0 4px;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* ==========================================
+   АВАТАРКИ ИГРОКОВ В СПИСКЕ
+   ========================================== */
+
+.player-avatar-thumb {
+    flex-shrink: 0;
+}
+
+.player-avatar-thumb img {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    display: block !important;
+    border: 1px solid #ddd;
+}
+
+.card-text {
+    flex: 1;
+}
+
+.card-title {
+    font-weight: bold;
+    font-size: 1rem;
+    color: #222;
+}
+
+.card-sub {
+    font-size: 0.82rem;
+    color: #555;
+    margin-top: 2px;
+}
+
+.card-pts {
+    font-size: 0.78rem;
+    color: #0b70a4;
+    margin-top: 2px;
+}
+
+.btn-delete {
+    background: none;
+    border: none;
+    color: #cc0000;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 5px 8px;
+    opacity: 0.5;
+}
+
+.btn-delete:hover {
+    opacity: 1;
+}
+
+/* ==========================================
+   2. ПРАВАЯ КОЛОНКА: ПРОФИЛЬ ИГРОКА (САЙДБАР)
+   ========================================== */
+
+.details-side {
+    width: 320px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15px !important;
+}
+
+.side-box {
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.search-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-sizing: border-box;
+}
+
+.btn-primary {
+    background: #0b70a4;
+    color: white;
+    border: none;
+    padding: 9px 12px;
+    border-radius: 3px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background: #08567e;
+}
+
+.btn-secondary {
+    background: #ccc;
+    color: #333;
+    border: none;
+    padding: 9px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-small {
+    background: #0b70a4;
+    color: white;
+    border: none;
+    font-size: 0.75rem;
+    padding: 3px 7px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+/* ШАПКА ПРОФИЛЯ И БОЛЬШАЯ АВАТАРКА */
+.player-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
 }
 
 .profile-avatar {
-    width: 100%;
-    height: 100%;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
     object-fit: cover;
+    border: 2px solid #0b70a4;
+    flex-shrink: 0;
 }
 
-/* Имя и Флаг СЛЕВА перед ником */
-.profile-title {
+.stats-row {
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
+    justify-content: space-around;
+    margin-top: 10px;
+    background: #f8f9fa;
+    padding: 8px;
+    font-size: 0.85rem;
 }
 
-.profile-title h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #333333 !important;
+/* СПИСОК ДЕМОНОВ ИГРОКА */
+.records-section {
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.records-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.records-list {
+    list-style: none;
+    padding: 0;
     margin: 0;
-    line-height: 1;
-}
-
-.flag-img {
-    width: 28px;
-    height: 19px;
-    object-fit: cover;
-    border-radius: 2px;
-    border: 1px solid #e1e8ed;
-    flex-shrink: 0;
-}
-
-/* Статистика RANK */
-.single-stat-container {
-    display: flex;
-    width: 100%;
-}
-
-.card-stat {
-    flex: 1;
-    background: #f8f9fa !important;
-    border: 1px dashed #cccccc !important;
-    border-radius: 4px !important;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-}
-
-.stat-icon {
-    font-size: 1.4rem;
-}
-
-.stat-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.stat-info .val {
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: #0b70a4 !important;
-}
-
-.stat-info .lbl {
-    font-size: 0.68rem;
-    color: #777777 !important;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-}
-
-/* Секции карточек */
-.section-box {
-    background: #ffffff !important;
-    border: 1px dashed #cccccc !important;
-    border-radius: 4px !important;
-    padding: 16px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.box-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.box-title {
-    font-weight: 700;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.red-title { color: #d32f2f !important; }
-.blue-title { color: #0b70a4 !important; }
-.green-title { color: #2e7d32 !important; }
-
-.hardest-name {
-    font-size: 1.05rem;
-    font-weight: 800;
-    color: #333333 !important;
-}
-
-.badge-count {
-    background: #f0f4f8 !important;
-    color: #0b70a4 !important;
-    border: 1px solid #d0dbe5;
-    border-radius: 10px;
-    padding: 2px 8px;
-    font-size: 0.75rem;
-    font-weight: 700;
-}
-
-/* Плашки уровней */
-.pills-flex {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.pill-btn {
-    background: #f8f9fa !important;
-    border: 1px solid #e1e8ed !important;
-    padding: 6px 14px;
-    border-radius: 4px !important;
     font-size: 0.85rem;
-    font-weight: 600;
-    color: #333333 !important;
-    transition: all 0.15s ease;
 }
 
-.pill-btn:hover {
-    border-color: #0b70a4 !important;
-    background: #ffffff !important;
-}
-
-.blue-text {
-    color: #0b70a4 !important;
-}
-
-/* Верифицированные уровни */
-.verified-box {
-    background: rgba(46, 125, 50, 0.04) !important;
-    border: 1px dashed rgba(46, 125, 50, 0.4) !important;
-}
-
-.green-badge {
-    background: rgba(46, 125, 50, 0.1) !important;
-    color: #2e7d32 !important;
-}
-
-.check-circle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    border: 1.5px solid #2e7d32;
-    border-radius: 50%;
-    font-size: 9px;
-    color: #2e7d32;
-}
-
-.verified-pill {
-    background: #ffffff !important;
-    border: 1px solid rgba(46, 125, 50, 0.3) !important;
-    color: #2e7d32 !important;
-}
-
-/* Правая колонка — Список игроков */
-.sidebar-list {
-    width: 320px;
+.records-list li {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.sidebar-item {
-    background: #ffffff !important;
-    border: 1px dashed #cccccc !important;
-    border-radius: 4px !important;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px dashed #f0f0f0;
+}
+
+.btn-del-sm {
+    background: none;
+    border: none;
+    color: #999;
     cursor: pointer;
-    transition: all 0.15s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-.sidebar-item:hover, .sidebar-item.active {
-    background: #ffffff !important;
-    border-style: solid !important;
-    border-color: #0b70a4 !important;
-    border-left: 4px solid #0b70a4 !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+.btn-del-sm:hover { 
+    color: red; 
 }
 
-.rank-num {
-    color: #0b70a4 !important;
-    font-weight: 800;
+.btn-reset {
+    background: none;
+    border: none;
+    color: #0b70a4;
+    font-size: 0.75rem;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.empty-text, .empty-msg {
+    color: #888;
     font-size: 0.85rem;
-    min-width: 26px;
+    padding: 10px 0;
 }
 
-.user-block {
+/* ==========================================
+   3. МОДАЛЬНЫЕ ОКНА
+   ========================================== */
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
     display: flex;
     align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-body {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    width: 360px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.modal-body h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.modal-body label {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+    color: #444;
+}
+
+.modal-body input {
+    width: 100%;
+    padding: 6px 8px;
+    margin-top: 3px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-sizing: border-box;
+}
+
+.modal-actions {
+    display: flex;
     gap: 10px;
-    flex: 1;
-}
-
-.list-avatar {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid #e1e8ed;
-}
-
-.list-flag-img {
-    width: 20px;
-    height: 14px;
-    object-fit: cover;
-    border-radius: 2px;
-    border: 1px solid #e1e8ed;
-    flex-shrink: 0;
-}
-
-.username {
-    font-weight: 700;
-    font-size: 0.88rem;
-    color: #333333 !important;
+    margin-top: 15px;
 }
