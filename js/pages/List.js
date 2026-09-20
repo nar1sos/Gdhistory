@@ -4,119 +4,91 @@ import Spinner from "../components/Spinner.js";
 export default {
     components: { Spinner },
     template: `
-        <main v-if="loading" class="gdl-wrapper">
+        <main v-if="loading" class="pointer-wrapper">
             <Spinner></Spinner>
         </main>
 
-        <div v-else class="gdl-wrapper">
-            <!-- ДВЕ КОЛОНКИ (1 В 1 КАК НА POINTERCRATE) -->
-            <div class="gdl-content-grid">
+        <div v-else class="pointer-wrapper">
+            <!-- ДВЕ ОСНОВНЫЕ КОЛОНКИ -->
+            <div class="pointer-layout">
                 
-                <!-- ЛЕВАЯ КОЛОНКА (СПИСОК УРОВНЕЙ) -->
-                <div class="gdl-left-column">
-                    <div class="gdl-cards-container">
-                        <div 
-                            v-for="level in filteredList" 
-                            :key="level.path || level.rank" 
-                            class="gdl-level-card"
-                            :class="{ 'active': selectedLevel?.name === level.name }"
-                            @click="selectedLevel = level"
-                        >
-                            <div class="gdl-card-thumb">
-                                <img :src="getThumbnail(level.ytid)" @error="onThumbError" />
-                            </div>
-                            <div class="gdl-card-info">
-                                <div class="card-header">
-                                    <h3 class="level-title">#{{ level.rank }} - {{ level.name }}</h3>
-                                </div>
-                                <div class="card-authors">
-                                    опубликован <strong>{{ level.author }}</strong>
-                                </div>
-                                <div class="card-points">
-                                    <span>{{ score(level.rank) }} pts</span> — {{ level.percentToQualify || 100 }}% или выше
-                                </div>
-                            </div>
+                <!-- ЛЕВАЯ КОЛОНКА: ТОЛЬКО СПИСОК УРОВНЕЙ -->
+                <div class="list-side">
+                    <div 
+                        v-for="level in filteredList" 
+                        :key="level.path || level.rank" 
+                        class="pointer-card"
+                        :class="{ 'active': selectedLevel?.name === level.name }"
+                        @click="selectedLevel = level"
+                    >
+                        <div class="card-thumb">
+                            <img :src="getThumbnail(level.ytid)" @error="onThumbError" />
                         </div>
-                        <div v-if="filteredList.length === 0" style="color: #64748b; text-align: center; padding: 20px;">
-                            Уровень не найден.
+                        <div class="card-text">
+                            <div class="card-title">#{{ level.rank }} - {{ level.name }}</div>
+                            <div class="card-sub">опубликован <strong>{{ level.author }}</strong></div>
+                            <div class="card-pts">{{ score(level.rank) }} pts — {{ level.percentToQualify || 100 }}% или выше</div>
                         </div>
+                    </div>
+                    <div v-if="filteredList.length === 0" class="empty-msg">
+                        Уровни не найдены.
                     </div>
                 </div>
 
-                <!-- ПРАВАЯ КОЛОНКА (ИНФО, МОДЕРАТОРЫ, ПРАВИЛА, ПОИСК) -->
-                <div class="gdl-right-column">
+                <!-- ПРАВАЯ КОЛОНКА: ИНФОРМАЦИЯ, ПОИСК, МОДЕРАТОРЫ, ПРАВИЛА -->
+                <div class="details-side">
                     
-                    <!-- ПОИСК СРАЗУ СВЕРХУ -->
-                    <div class="gdl-search-bar">
-                        <div class="search-input-wrapper">
-                            <input 
-                                type="text" 
-                                v-model="searchQuery" 
-                                placeholder="Поиск уровней..." 
-                                class="gdl-input"
-                            />
-                            <button v-if="searchQuery" @click="searchQuery = ''" class="clear-btn">✕</button>
+                    <!-- 1. ПОИСК -->
+                    <div class="side-box search-box">
+                        <input 
+                            type="text" 
+                            v-model="searchQuery" 
+                            placeholder="Поиск уровней..." 
+                            class="search-input"
+                        />
+                    </div>
+
+                    <!-- 2. ИНФО О ВЫБРАННОМ УРОВНЕ И ВИДЕО -->
+                    <div class="side-box" v-if="selectedLevel">
+                        <h2 class="level-heading">#{{ selectedLevel.rank }} {{ selectedLevel.name }}</h2>
+                        <div class="author-info">
+                            <div><span>CREATOR</span> <strong>{{ selectedLevel.author }}</strong></div>
+                            <div><span>VERIFIER</span> <strong>{{ selectedLevel.verifier }}</strong></div>
+                        </div>
+
+                        <div class="video-container" v-if="selectedLevel.ytid">
+                            <iframe 
+                                :src="embed(selectedLevel.ytid)" 
+                                frameborder="0" 
+                                allowfullscreen
+                            ></iframe>
+                        </div>
+
+                        <div class="stats-row">
+                            <div><span>POINTS</span> <strong>{{ score(selectedLevel.rank) }}</strong></div>
+                            <div><span>QUALIFY</span> <strong>{{ selectedLevel.percentToQualify || 100 }}%</strong></div>
                         </div>
                     </div>
 
-                    <!-- ДЕТАЛИ И ВИДЕО УРОВНЯ -->
-                    <div class="gdl-details-container" v-if="selectedLevel">
-                        <div class="gdl-level-detail-box">
-                            <h2 class="detail-title">#{{ selectedLevel.rank }} {{ selectedLevel.name }}</h2>
-
-                            <div class="authors-clean-block">
-                                <div class="author-item">
-                                    <span class="author-label">CREATOR</span>
-                                    <span class="author-val">{{ selectedLevel.author }}</span>
-                                </div>
-                                <div class="author-item">
-                                    <span class="author-label">VERIFIER</span>
-                                    <span class="author-val verifier-name">{{ selectedLevel.verifier }}</span>
-                                </div>
-                            </div>
-
-                            <!-- ВИДЕО -->
-                            <div class="video-wrapper" v-if="selectedLevel.ytid">
-                                <iframe 
-                                    :src="embed(selectedLevel.ytid)" 
-                                    frameborder="0" 
-                                    allowfullscreen
-                                ></iframe>
-                            </div>
-
-                            <!-- СТАТИСТИКА -->
-                            <div class="gdl-stats-grid">
-                                <div class="stat-item">
-                                    <span class="stat-label">POINTS</span>
-                                    <span class="stat-value">{{ score(selectedLevel.rank) }}</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-label">QUALIFY</span>
-                                    <span class="stat-value">{{ selectedLevel.percentToQualify || 100 }}%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- МОДЕРАТОРЫ -->
-                    <div class="gdl-meta-box">
+                    <!-- 3. МОДЕРАТОРЫ -->
+                    <div class="side-box">
                         <h3>Модераторы листа</h3>
-                        <ul class="editors-list" v-if="editors.length">
+                        <ul class="simple-list" v-if="editors.length">
                             <li v-for="(editor, i) in editors" :key="i">
-                                <span>{{ editor.name || editor }}</span>
+                                {{ editor.name || editor }}
                             </li>
                         </ul>
-                        <p v-else style="color: #64748b; font-size: 13px;">Нет модераторов.</p>
+                        <p v-else class="empty-text">Нет модераторов.</p>
                     </div>
 
-                    <!-- ПРАВИЛА -->
-                    <div class="gdl-meta-box rules-section">
+                    <!-- 4. ПРАВИЛА -->
+                    <div class="side-box">
                         <h3>Правила</h3>
-                        <ul class="rules-list">
-                            <li><strong>1.</strong> Records must have video proof with clicks/taps.</li>
-                            <li><strong>2.</strong> Raw footage must be available if requested.</li>
-                            <li><strong>3.</strong> Hacks or secret ways are strictly prohibited.</li>
-                        </ul>
+                        <ol class="rules-list">
+                            <li>Records must have video proof with clicks/taps.</li>
+                            <li>Raw footage must be available if requested.</li>
+                            <li>Hacks or secret ways are strictly prohibited.</li>
+                        </ol>
                     </div>
 
                 </div>
