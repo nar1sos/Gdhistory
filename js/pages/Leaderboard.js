@@ -1,143 +1,130 @@
-import { fetchLeaderboard } from "../content.js";
 import Spinner from "../components/Spinner.js";
 
 export default {
     components: { Spinner },
     template: `
-        <main v-if="loading" class="leaderboard-wrapper">
+        <main v-if="loading" class="pointer-wrapper">
             <Spinner></Spinner>
         </main>
-        
-        <div v-else class="leaderboard-container">
-            <!-- ЛЕВАЯ КОЛОНКА: ПРОФИЛЬ -->
-            <div class="profile-card" v-if="selectedPlayer">
-                <!-- Аватарка -->
-                <div class="profile-header">
-                    <div class="avatar-ring">
-                        <img 
-                            :src="getAvatarUrl(selectedPlayer)" 
-                            class="profile-avatar"
-                            @error="onAvatarError"
-                        />
+
+        <div v-else class="pointer-wrapper">
+            <div class="pointer-layout">
+                
+                <!-- ЛЕВАЯ КОЛОНКА: ЛИДЕРБОРД С DRAG & DROP -->
+                <div class="list-side">
+                    <div 
+                        v-for="(player, index) in filteredLeaderboard" 
+                        :key="player.id || player.name" 
+                        class="pointer-card"
+                        :class="{ 
+                            'active': selectedPlayer?.name === player.name,
+                            'dragging': dragIndex === index 
+                        }"
+                        draggable="true"
+                        @dragstart="onDragStart(index, $event)"
+                        @dragover.prevent="onDragOver(index)"
+                        @drop="onDrop(index)"
+                        @click="selectedPlayer = player"
+                    >
+                        <div class="drag-handle" title="Зажми ЛКМ и потяни, чтобы изменить ранг игрока">⣿</div>
+                        
+                        <div class="card-text">
+                            <div class="card-title">#{{ index + 1 }} - {{ player.name }}</div>
+                            <div class="card-sub">Пройдено демонов: <strong>{{ player.demons ? player.demons.length : 0 }}</strong></div>
+                            <div class="card-pts"><strong>{{ player.points || calculatePoints(player) }}</strong> pts</div>
+                        </div>
+
+                        <button class="btn-delete" @click.stop="removePlayer(index)" title="Удалить игрока">✕</button>
                     </div>
-                    <!-- Имя с флагом СЛЕВА -->
-                    <div class="profile-title">
-                        <img 
-                            v-if="getPlayerFlag(selectedPlayer)" 
-                            :src="getPlayerFlag(selectedPlayer)" 
-                            class="flag-img" 
-                            @error="onFlagError"
-                        />
-                        <h1>{{ selectedPlayer.user }}</h1>
+
+                    <div v-if="leaderboard.length === 0" class="empty-msg">
+                        Лидерборд пуст. Нажми «+ Добавить игрока» справа!
                     </div>
                 </div>
 
-                <!-- Статистика: RANK -->
-                <div class="single-stat-container">
-                    <div class="card-stat">
-                        <span class="stat-icon">🏆</span>
-                        <div class="stat-info">
-                            <span class="val">#{{ selectedRank }}</span>
-                            <span class="lbl">RANK</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Hardest level -->
-                <div class="section-box hardest-box" v-if="selectedPlayer.hardest">
-                    <div class="box-title red-title">
-                        🔥 Hardest level
-                    </div>
-                    <div class="hardest-name">
-                        {{ selectedPlayer.hardest }}
-                    </div>
-                </div>
-
-                <!-- Main levels -->
-                <div class="section-box" v-if="mainLevels.length">
-                    <div class="box-header">
-                        <div class="box-title red-title">
-                            ★ Main levels
-                        </div>
-                        <span class="badge-count">{{ mainLevels.length }}</span>
-                    </div>
-                    <div class="pills-flex">
-                        <div 
-                            v-for="(lvl, idx) in mainLevels" 
-                            :key="idx" 
-                            class="pill-btn"
-                        >
-                            {{ lvl }}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Progresses -->
-                <div class="section-box" v-if="progresses.length">
-                    <div class="box-header">
-                        <div class="box-title blue-title">
-                            📊 Progresses
-                        </div>
-                        <span class="badge-count">{{ progresses.length }}</span>
-                    </div>
-                    <div class="pills-flex">
-                        <div 
-                            v-for="(prog, idx) in progresses" 
-                            :key="idx" 
-                            class="pill-btn progress-pill"
-                        >
-                            {{ prog.levelName || prog }} <span v-if="prog.percent" class="blue-text">({{ prog.percent }}%)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Which are verified -->
-                <div class="section-box verified-box" v-if="verifiedLevels.length">
-                    <div class="box-header">
-                        <div class="box-title green-title">
-                            <span class="check-circle">✓</span> Which are verified
-                        </div>
-                        <span class="badge-count green-badge">{{ verifiedLevels.length }}</span>
-                    </div>
-                    <div class="pills-flex">
-                        <div 
-                            v-for="(ver, idx) in verifiedLevels" 
-                            :key="idx" 
-                            class="pill-btn verified-pill"
-                        >
-                            {{ ver.levelName || ver }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ПРАВАЯ КОЛОНКА: СПИСОК ИГРОКОВ -->
-            <div class="sidebar-list">
-                <div 
-                    v-for="(player, index) in leaderboard" 
-                    :key="player.user || index"
-                    class="sidebar-item"
-                    :class="{ 'active': selectedPlayer?.user === player.user }"
-                    @click="selectedPlayer = player"
-                >
-                    <span class="rank-num">#{{ index + 1 }}</span>
+                <!-- ПРАВАЯ КОЛОНКА: ПОИСК, ПРОФИЛЬ ИГРОКА, АДМИНКА -->
+                <div class="details-side">
                     
-                    <div class="user-block">
-                        <img 
-                            :src="getAvatarUrl(player)" 
-                            class="list-avatar" 
-                            @error="onAvatarError"
+                    <!-- ПОИСК И ДОБАВЛЕНИЕ ИГРОКА -->
+                    <div class="side-box search-box">
+                        <input 
+                            type="text" 
+                            v-model="searchQuery" 
+                            placeholder="Поиск игрока..." 
+                            class="search-input"
                         />
-                        <img 
-                            v-if="getPlayerFlag(player)" 
-                            :src="getPlayerFlag(player)" 
-                            class="list-flag-img" 
-                            @error="onFlagError"
-                        />
-                        <span class="username">{{ player.user }}</span>
+                        <button class="btn-primary" @click="showAddPlayerModal = true">+ Добавить игрока</button>
                     </div>
+
+                    <!-- ИНФОРМАЦИЯ О ВЫБРАННОМ ИГРОКЕ -->
+                    <div class="side-box" v-if="selectedPlayer">
+                        <h2 class="level-heading">#{{ getPlayerRank(selectedPlayer) }} {{ selectedPlayer.name }}</h2>
+                        
+                        <div class="stats-row" style="margin-bottom: 15px;">
+                            <div><span>POINTS</span> <strong>{{ selectedPlayer.points || calculatePoints(selectedPlayer) }}</strong></div>
+                            <div><span>DEMONS</span> <strong>{{ selectedPlayer.demons ? selectedPlayer.demons.length : 0 }}</strong></div>
+                        </div>
+
+                        <!-- СПИСОК ПРОЙДЕННЫХ УРОВНЕЙ ИГРОКА -->
+                        <div class="records-section">
+                            <div class="records-header">
+                                <h4>Пройденные уровни</h4>
+                                <button class="btn-small" @click="showAddDemonModal = true">+ Демон</button>
+                            </div>
+                            <ul class="records-list" v-if="selectedPlayer.demons && selectedPlayer.demons.length">
+                                <li v-for="(dem, dIdx) in selectedPlayer.demons" :key="dIdx">
+                                    <div class="rec-info">
+                                        <strong>{{ dem.name }}</strong> ({{ dem.percent || 100 }}%)
+                                    </div>
+                                    <button class="btn-del-sm" @click="removeDemonFromPlayer(dIdx)">✕</button>
+                                </li>
+                            </ul>
+                            <p v-else class="empty-text">Нет прикрепленных прохождений.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- МОДАЛКА: ДОБАВИТЬ ИГРОКА -->
+            <div class="modal-overlay" v-if="showAddPlayerModal" @click.self="showAddPlayerModal = false">
+                <div class="modal-body">
+                    <h3>Добавить игрока в Leaderboard</h3>
+                    <form @submit.prevent="addPlayer">
+                        <label>Никнейм игрока:
+                            <input v-model="newPlayer.name" required placeholder="например, Zoink" />
+                        </label>
+                        <label>Начальные очки (pts):
+                            <input type="number" v-model.number="newPlayer.points" placeholder="1000" />
+                        </label>
+                        <div class="modal-actions">
+                            <button type="submit" class="btn-primary">Сохранить</button>
+                            <button type="button" class="btn-secondary" @click="showAddPlayerModal = false">Отмена</button>
+                        </div>
+                    </form>
                 </div>
             </div>
+
+            <!-- МОДАЛКА: ДОБАВИТЬ ДЕМОН ИГРОКУ -->
+            <div class="modal-overlay" v-if="showAddDemonModal" @click.self="showAddDemonModal = false">
+                <div class="modal-body">
+                    <h3>Прикрепить пройденный демон</h3>
+                    <form @submit.prevent="addDemonToPlayer">
+                        <label>Название уровня:
+                            <input v-model="newDemon.name" required placeholder="например, Tidal Wave" />
+                        </label>
+                        <label>Процент прохождения (%):
+                            <input type="number" v-model.number="newDemon.percent" value="100" min="1" max="100" />
+                        </label>
+                        <div class="modal-actions">
+                            <button type="submit" class="btn-primary">Прикрепить</button>
+                            <button type="button" class="btn-secondary" @click="showAddDemonModal = false">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
         </div>
     `,
 
@@ -145,84 +132,122 @@ export default {
         leaderboard: [],
         loading: true,
         selectedPlayer: null,
-        defaultAvatar: 'https://i.imgur.com/6VBx3io.png'
+        searchQuery: "",
+        dragIndex: null,
+        showAddPlayerModal: false,
+        showAddDemonModal: false,
+        newPlayer: { name: "", points: 0 },
+        newDemon: { name: "", percent: 100 }
     }),
 
     computed: {
-        selectedRank() {
-            if (!this.selectedPlayer || !this.leaderboard.length) return '-';
-            const index = this.leaderboard.findIndex(p => p.user === this.selectedPlayer.user);
-            return index !== -1 ? index + 1 : '-';
-        },
-        mainLevels() {
-            if (!this.selectedPlayer) return [];
-            
-            const records = (this.selectedPlayer.records || [])
-                .filter(r => typeof r === 'string' || !r.percent || r.percent === 100)
-                .map(r => typeof r === 'string' ? r : r.levelName);
-                
-            const verified = (this.selectedPlayer.verified || [])
-                .map(v => typeof v === 'string' ? v : v.levelName);
-
-            return [...new Set([...records, ...verified])];
-        },
-        progresses() {
-            if (!this.selectedPlayer?.records) return [];
-            return this.selectedPlayer.records.filter(r => typeof r === 'object' && r.percent && r.percent < 100);
-        },
-        verifiedLevels() {
-            if (!this.selectedPlayer) return [];
-            return this.selectedPlayer.verified || [];
+        filteredLeaderboard() {
+            if (!this.searchQuery) return this.leaderboard;
+            const q = this.searchQuery.toLowerCase().trim();
+            return this.leaderboard.filter(p => p.name && p.name.toLowerCase().includes(q));
         }
     },
 
-    async mounted() {
-        const data = await fetchLeaderboard();
-        this.leaderboard = Array.isArray(data) ? data : [];
-        if (this.leaderboard.length > 0) {
-            this.selectedPlayer = this.leaderboard[0];
-        }
-        this.loading = false;
+    mounted() {
+        this.loadData();
     },
 
     methods: {
-        getPlayerFlag(player) {
-            if (!player) return null;
+        loadData() {
+            const savedLeaderboard = localStorage.getItem('custom_leaderboard');
 
-            let raw = player.country || player.nationality || player.nation;
+            if (savedLeaderboard) {
+                this.leaderboard = JSON.parse(savedLeaderboard);
+            } else {
+                // Стартовый лидерборд
+                this.leaderboard = [
+                    { id: 1, name: "Твой Ник (Топ 1)", points: 2500, demons: [{ name: "Tidal Wave", percent: 100 }] },
+                    { id: 2, name: "Zoink", points: 2100, demons: [{ name: "Acheron", percent: 100 }] },
+                    { id: 3, name: "Doggie", points: 1800, demons: [{ name: "Grief", percent: 100 }] }
+                ];
+            }
 
-            if (!raw && Array.isArray(player.records)) {
-                for (const rec of player.records) {
-                    if (rec && typeof rec === 'object' && (rec.country || rec.nationality || rec.nation)) {
-                        raw = rec.country || rec.nationality || rec.nation;
-                        break;
-                    }
+            if (this.leaderboard.length > 0) {
+                this.selectedPlayer = this.leaderboard[0];
+            }
+            this.loading = false;
+        },
+
+        saveData() {
+            localStorage.setItem('custom_leaderboard', JSON.stringify(this.leaderboard));
+        },
+
+        /* DRAG & DROP ДЛЯ ИГРОКОВ */
+        onDragStart(index, event) {
+            this.dragIndex = index;
+            event.dataTransfer.effectAllowed = "move";
+        },
+
+        onDragOver(index) {
+            if (this.dragIndex === null || this.dragIndex === index) return;
+            const movedPlayer = this.leaderboard.splice(this.dragIndex, 1)[0];
+            this.leaderboard.splice(index, 0, movedPlayer);
+            this.dragIndex = index;
+        },
+
+        onDrop() {
+            this.dragIndex = null;
+            this.saveData();
+        },
+
+        /* УПРАВЛЕНИЕ ИГРОКАМИ */
+        addPlayer() {
+            const playerObj = {
+                id: Date.now(),
+                name: this.newPlayer.name,
+                points: this.newPlayer.points || 0,
+                demons: []
+            };
+
+            this.leaderboard.push(playerObj);
+            this.selectedPlayer = playerObj;
+            this.saveData();
+
+            this.showAddPlayerModal = false;
+            this.newPlayer = { name: "", points: 0 };
+        },
+
+        removePlayer(index) {
+            if (confirm(`Удалить игрока "${this.leaderboard[index].name}" из лидерборда?`)) {
+                const isSelected = this.selectedPlayer === this.leaderboard[index];
+                this.leaderboard.splice(index, 1);
+                if (isSelected) {
+                    this.selectedPlayer = this.leaderboard[0] || null;
                 }
+                this.saveData();
             }
+        },
 
-            if (!raw) return null;
+        /* ДЕМОНЫ ИГРОКА */
+        addDemonToPlayer() {
+            if (!this.selectedPlayer) return;
+            if (!this.selectedPlayer.demons) this.selectedPlayer.demons = [];
 
-            let code = String(raw).trim().toLowerCase();
+            this.selectedPlayer.demons.push({ ...this.newDemon });
+            this.saveData();
 
-            if (code.startsWith('http') || code.startsWith('/')) {
-                return raw;
+            this.showAddDemonModal = false;
+            this.newDemon = { name: "", percent: 100 };
+        },
+
+        removeDemonFromPlayer(dIdx) {
+            if (this.selectedPlayer && this.selectedPlayer.demons) {
+                this.selectedPlayer.demons.splice(dIdx, 1);
+                this.saveData();
             }
-
-            return `https://flagcdn.com/w40/${code.slice(0, 2)}.png`;
         },
 
-        getAvatarUrl(player) {
-            if (player?.avatar) return player.avatar;
-            if (player?.icon) return player.icon;
-            return `https://github.com/${player?.user || 'ghost'}.png`;
+        getPlayerRank(player) {
+            return this.leaderboard.findIndex(p => p === player) + 1;
         },
 
-        onAvatarError(e) {
-            e.target.src = this.defaultAvatar;
-        },
-
-        onFlagError(e) {
-            e.target.style.display = 'none';
+        calculatePoints(player) {
+            return player.demons ? player.demons.length * 100 : 0;
         }
     }
 };
