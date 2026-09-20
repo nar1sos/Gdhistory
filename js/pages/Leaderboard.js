@@ -3,136 +3,99 @@ import Spinner from "../components/Spinner.js";
 export default {
     components: { Spinner },
     template: `
-        <main v-if="loading" class="leaderboard-container">
+        <main v-if="loading" class="pointer-wrapper">
             <Spinner></Spinner>
         </main>
 
-        <div v-else class="leaderboard-container">
-            
-            <!-- ВЕРХНЯЯ ПАНЕЛЬ (ЗАГОЛОВОК, ПОИСК, КНОПКА) -->
-            <div class="leaderboard-header">
-                <div class="header-info">
-                    <h1>Leaderboard</h1>
-                    <p>Топ игроков по набранным очкам</p>
-                </div>
-                <div class="header-controls">
-                    <input 
-                        type="text" 
-                        v-model="searchQuery" 
-                        placeholder="Поиск игрока..." 
-                        class="search-input"
-                    />
-                    <button class="btn-primary" @click="showAddModal = true">+ Добавить игрока</button>
-                </div>
-            </div>
+        <div v-else class="pointer-wrapper">
+            <div class="pointer-layout">
+                
+                <!-- ЛЕВАЯ КОЛОНКА: СПИСОК ИГРОКОВ (В СТИЛЕ POINTERCRATE) -->
+                <div class="list-side">
+                    <div 
+                        v-for="(player, index) in sortedList" 
+                        :key="player.id || player.name" 
+                        class="pointer-card"
+                        :class="{ 'active': isSelected(player) }"
+                        @click="toggleSelectPlayer(player)"
+                    >
+                        <!-- АВАТАРКА -->
+                        <div class="card-thumb player-thumb">
+                            <img :src="getAvatar(player)" @error="onImageError" alt="Avatar" />
+                        </div>
 
-            <!-- ТАБЛИЦА ЛИДЕРОВ -->
-            <div class="table-wrapper">
-                <table class="leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th class="th-rank">#</th>
-                            <th class="th-player">Игрок</th>
-                            <th class="th-demons">Демоны</th>
-                            <th class="th-points">Очки</th>
-                            <th class="th-actions"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr 
-                            v-for="(player, index) in filteredList" 
-                            :key="player.id || player.name"
-                            :class="{ 'selected-row': isSelected(player) }"
-                            @click="toggleSelectPlayer(player)"
-                        >
-                            <!-- РАНГ -->
-                            <td class="td-rank">
-                                <span class="rank-number" :class="'rank-' + (index + 1)">
-                                    #{{ index + 1 }}
-                                </span>
-                            </td>
-
-                            <!-- ИГРОК И ФЛАГ -->
-                            <td class="td-player">
-                                <div class="player-cell">
-                                    <img 
-                                        v-if="player.country" 
-                                        :src="getFlagUrl(player.country)" 
-                                        class="flag-icon" 
-                                        :title="player.country.toUpperCase()" 
-                                    />
-                                    <img :src="getAvatar(player)" @error="onImageError" class="player-avatar" />
-                                    <span class="player-name">{{ player.name }}</span>
-                                </div>
-                            </td>
-
-                            <!-- КОЛИЧЕСТВО ДЕМОНОВ -->
-                            <td class="td-demons">
-                                {{ player.demonsCount || (player.demons ? player.demons.length : 0) }}
-                            </td>
-
-                            <!-- ОЧКИ -->
-                            <td class="td-points">
-                                <strong>{{ player.points || 0 }}</strong> <small>pts</small>
-                            </td>
-
-                            <!-- УПРАВЛЕНИЕ -->
-                            <td class="td-actions" @click.stop>
-                                <button class="btn-del-sm" @click="removePlayer(index)" title="Удалить игрока">✕</button>
-                            </td>
-                        </tr>
-
-                        <tr v-if="filteredList.length === 0">
-                            <td colspan="5" class="empty-table">
-                                Игроки не найдены.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- ДЕТАЛИ ВЫБРАННОГО ИГРОКА (ПОД ТАБЛИЦЕЙ) -->
-            <div class="player-details-card" v-if="selectedPlayer">
-                <div class="details-header">
-                    <div class="details-user">
-                        <img v-if="selectedPlayer.country" :src="getFlagUrl(selectedPlayer.country)" class="flag-icon-lg" />
-                        <h2>#{{ getPlayerRank(selectedPlayer) }} — {{ selectedPlayer.name }}</h2>
-                    </div>
-                    <button class="btn-small" @click="showAddDemonModal = true">+ Засчитать уровень</button>
-                </div>
-
-                <div class="player-stats">
-                    <div class="stat-box">
-                        <span>Всего очков</span>
-                        <strong>{{ selectedPlayer.points || 0 }} pts</strong>
-                    </div>
-                    <div class="stat-box">
-                        <span>Страна</span>
-                        <strong>{{ selectedPlayer.country ? selectedPlayer.country.toUpperCase() : 'Не указана' }}</strong>
-                    </div>
-                    <div class="stat-box">
-                        <span>Пройдено уровней</span>
-                        <strong>{{ selectedPlayer.demons ? selectedPlayer.demons.length : 0 }}</strong>
-                    </div>
-                </div>
-
-                <!-- СПИСОК ПРОЙДЕННЫХ УРОВНЕЙ -->
-                <div class="player-records">
-                    <h3>Пройденные демоны</h3>
-                    <div class="records-grid" v-if="selectedPlayer.demons && selectedPlayer.demons.length">
-                        <div class="record-item" v-for="(dem, dIdx) in selectedPlayer.demons" :key="dIdx">
-                            <div class="rec-details">
-                                <span class="rec-name">{{ dem.name }}</span>
-                                <span class="rec-meta">{{ dem.percent || 100 }}% — {{ dem.points || 0 }} pts</span>
+                        <!-- ТЕКСТ КАРТОЧКИ -->
+                        <div class="card-text">
+                            <div class="card-title">
+                                <img v-if="player.country" :src="getFlagUrl(player.country)" class="flag-icon" :title="player.country.toUpperCase()" />
+                                #{{ index + 1 }} - {{ player.name }}
                             </div>
-                            <div class="rec-actions">
-                                <a v-if="dem.video" :href="dem.video" target="_blank" class="rec-link">Proof ↗</a>
-                                <button class="btn-del-sm" @click="removeDemon(dIdx)">✕</button>
+                            <div class="card-sub">Пройдено: <strong>{{ player.demons ? player.demons.length : 0 }} демонов</strong></div>
+                            <div class="card-pts"><strong>{{ player.points || 0 }}</strong> pts</div>
+                        </div>
+
+                        <button class="btn-delete" @click.stop="removePlayer(player)" title="Удалить">✕</button>
+                    </div>
+
+                    <div v-if="sortedList.length === 0" class="empty-msg">
+                        Игроки не найдены.
+                    </div>
+                </div>
+
+                <!-- ПРАВАЯ КОЛОНКА: САЙДБАР (ПОИСК И ИНФО О ВЫБРАННОМ) -->
+                <div class="details-side">
+                    
+                    <!-- ПОИСК И ДОБАВЛЕНИЕ -->
+                    <div class="side-box search-box">
+                        <input 
+                            type="text" 
+                            v-model="searchQuery" 
+                            placeholder="Поиск игрока..." 
+                            class="search-input"
+                        />
+                        <button class="btn-primary" @click="showAddModal = true">+ Добавить</button>
+                    </div>
+
+                    <!-- ИНФОРМАЦИЯ О ВЫБРАННОМ ИГРОКЕ -->
+                    <div class="side-box" v-if="selectedPlayer">
+                        <div class="player-profile-header">
+                            <img v-if="selectedPlayer.country" :src="getFlagUrl(selectedPlayer.country)" class="flag-icon-large" />
+                            <h2 class="level-heading" style="margin: 0;">#{{ getPlayerRank(selectedPlayer) }} {{ selectedPlayer.name }}</h2>
+                        </div>
+                        
+                        <div class="stats-row" style="margin: 15px 0;">
+                            <div><span>POINTS</span> <strong>{{ selectedPlayer.points || 0 }}</strong></div>
+                            <div><span>DEMONS</span> <strong>{{ selectedPlayer.demons ? selectedPlayer.demons.length : 0 }}</strong></div>
+                        </div>
+
+                        <!-- СПИСОК ПРОЙДЕННЫХ УРОВНЕЙ -->
+                        <div class="records-section">
+                            <div class="records-header">
+                                <h4>Пройденные уровни</h4>
+                                <button class="btn-small" @click="showAddDemonModal = true">+ Демон</button>
                             </div>
+                            <ul class="records-list" v-if="selectedPlayer.demons && selectedPlayer.demons.length">
+                                <li v-for="(dem, dIdx) in selectedPlayer.demons" :key="dIdx">
+                                    <div class="rec-info">
+                                        <strong>{{ dem.name }}</strong> ({{ dem.percent || 100 }}%)
+                                    </div>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <a v-if="dem.video" :href="dem.video" target="_blank" class="rec-link">Пруф ↗</a>
+                                        <button class="btn-del-sm" @click="removeDemon(dIdx)">✕</button>
+                                    </div>
+                                </li>
+                            </ul>
+                            <p v-else class="empty-text">Нет зачтённых прохождений.</p>
                         </div>
                     </div>
-                    <p v-else class="empty-text">У этого игрока ещё нет подтверждённых прохождений.</p>
+
+                    <!-- ЕСЛИ ВЫДЕЛЕНИЕ СНЯТО (НИЧЕГО НЕ ВЫБРАНО) -->
+                    <div class="side-box empty-msg" v-else style="text-align: center; color: #888; padding: 30px 15px;">
+                        <p style="margin: 0;">Выберите игрока из списка слева, чтобы просмотреть подробности.</p>
+                    </div>
+
                 </div>
+
             </div>
 
             <!-- МОДАЛКА: ДОБАВИТЬ ИГРОКА -->
@@ -141,15 +104,15 @@ export default {
                     <h3>Добавить игрока</h3>
                     <form @submit.prevent="addPlayer">
                         <label>Никнейм игрока:
-                            <input v-model="newPlayer.name" required placeholder="Zoink" />
+                            <input v-model="newPlayer.name" required placeholder="например, Zoink" />
                         </label>
-                        <label>Код страны (2 буквы, например: ru, us, ua, kr, de):
+                        <label>Код страны (например: ru, us, ua, kr, de):
                             <input v-model="newPlayer.country" placeholder="us" style="text-transform: lowercase;" maxLength="2" />
                         </label>
-                        <label>Ссылка на аватарку (необязательно):
-                            <input v-model="newPlayer.avatar" placeholder="https://..." />
+                        <label>Ссылка на аватарку (опционально):
+                            <input v-model="newPlayer.avatar" placeholder="https://i.imgur.com/..." />
                         </label>
-                        <label>Начальные очки:
+                        <label>Очки (pts):
                             <input type="number" v-model.number="newPlayer.points" placeholder="1000" />
                         </label>
                         <div class="modal-actions">
@@ -171,7 +134,7 @@ export default {
                         <label>Процент (%):
                             <input type="number" v-model.number="newDemon.percent" value="100" min="1" max="100" required />
                         </label>
-                        <label>Очки:
+                        <label>Очки за прохождение:
                             <input type="number" v-model.number="newDemon.points" placeholder="350" required />
                         </label>
                         <label>Ссылка на видео:
@@ -200,13 +163,13 @@ export default {
     }),
 
     computed: {
-        filteredList() {
+        sortedList() {
             let res = [...this.list];
             if (this.searchQuery) {
                 const q = this.searchQuery.toLowerCase().trim();
                 res = res.filter(item => item.name && item.name.toLowerCase().includes(q));
             }
-            // Автоматическая сортировка по очкам от большего к меньшему
+            // Сортировка по очкам от большего к меньшему
             return res.sort((a, b) => (b.points || 0) - (a.points || 0));
         }
     },
@@ -229,7 +192,6 @@ export default {
                         country: "us",
                         avatar: "", 
                         points: 3500,
-                        demonsCount: 2,
                         demons: [
                             { name: "Tidal Wave", percent: 100, points: 500, video: "https://youtu.be/..." },
                             { name: "Acheron", percent: 100, points: 450, video: "https://youtu.be/..." }
@@ -241,7 +203,6 @@ export default {
                         country: "us",
                         avatar: "", 
                         points: 2900,
-                        demonsCount: 1,
                         demons: [
                             { name: "Slaughterhouse", percent: 100, points: 400, video: "https://youtu.be/..." }
                         ]
@@ -252,7 +213,6 @@ export default {
                         country: "us",
                         avatar: "", 
                         points: 2750,
-                        demonsCount: 0,
                         demons: []
                     }
                 ];
@@ -290,6 +250,7 @@ export default {
 
         toggleSelectPlayer(player) {
             if (this.isSelected(player)) {
+                // Повторный клик снимает выделение и очищает правую панель
                 this.selectedPlayer = null;
             } else {
                 this.selectedPlayer = player;
@@ -303,7 +264,6 @@ export default {
                 country: this.newPlayer.country ? this.newPlayer.country.toLowerCase().trim() : "",
                 avatar: this.newPlayer.avatar,
                 points: this.newPlayer.points || 0,
-                demonsCount: 0,
                 demons: []
             };
 
@@ -315,9 +275,8 @@ export default {
             this.newPlayer = { name: "", country: "", avatar: "", points: 0 };
         },
 
-        removePlayer(index) {
-            if (confirm(`Удалить игрока "${this.filteredList[index].name}" из лидерборда?`)) {
-                const playerToRemove = this.filteredList[index];
+        removePlayer(playerToRemove) {
+            if (confirm(`Удалить игрока "${playerToRemove.name}"?`)) {
                 if (this.isSelected(playerToRemove)) {
                     this.selectedPlayer = null;
                 }
@@ -331,7 +290,6 @@ export default {
             if (!this.selectedPlayer.demons) this.selectedPlayer.demons = [];
 
             this.selectedPlayer.demons.push({ ...this.newDemon });
-            this.selectedPlayer.demonsCount = this.selectedPlayer.demons.length;
             this.selectedPlayer.points = (this.selectedPlayer.points || 0) + (this.newDemon.points || 0);
 
             this.saveData();
@@ -346,14 +304,12 @@ export default {
                 if (removed && removed.points) {
                     this.selectedPlayer.points = Math.max(0, (this.selectedPlayer.points || 0) - removed.points);
                 }
-                this.selectedPlayer.demonsCount = this.selectedPlayer.demons.length;
                 this.saveData();
             }
         },
 
         getPlayerRank(player) {
-            const sorted = [...this.list].sort((a, b) => (b.points || 0) - (a.points || 0));
-            return sorted.findIndex(i => (i.id ? i.id === player.id : i.name === player.name)) + 1;
+            return this.sortedList.findIndex(i => (i.id ? i.id === player.id : i.name === player.name)) + 1;
         }
     }
 };
