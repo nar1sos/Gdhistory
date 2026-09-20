@@ -28,7 +28,7 @@ export default {
                     >
                         <div class="drag-handle" title="Зажми ЛКМ и потяни, чтобы изменить порядок">⣿</div>
                         
-                        <!-- ПРЕВЬЮ УРОВНЯ (16:9) -->
+                        <!-- ПРЕВЬЮ УРОВНЯ (АВТО-ЮТУБ ИЛИ СВОЯ ССЫЛКА) -->
                         <div class="card-thumb">
                             <img :src="getImage(level)" @error="onImageError" alt="Level Preview" />
                         </div>
@@ -112,7 +112,7 @@ export default {
 
             </div>
 
-            <!-- МОДАЛКА: ДОБАВИТЬ УРО ВЕНЬ -->
+            <!-- МОДАЛКА: ДОБАВИТЬ УРОВЕНЬ -->
             <div class="modal-overlay" v-if="showAddModal" @click.self="showAddModal = false">
                 <div class="modal-body">
                     <h3>Добавить уровень</h3>
@@ -126,11 +126,11 @@ export default {
                         <label>Верификатор (Verifier):
                             <input v-model="newLevel.verifier" placeholder="например, Doggie" />
                         </label>
-                        <label>Ссылка на картинку / Превью:
-                            <input v-model="newLevel.image" placeholder="https://i.ytimg.com/vi/..." />
-                        </label>
                         <label>Ссылка на видео YouTube:
                             <input v-model="newLevel.video" placeholder="https://www.youtube.com/watch?v=..." />
+                        </label>
+                        <label>Своя ссылка на превью (опционально, перекрывает YouTube):
+                            <input v-model="newLevel.image" placeholder="https://i.imgur.com/... (оставь пустым для авто-превью)" />
                         </label>
                         <label>Очки за 100%:
                             <input type="number" v-model.number="newLevel.points" placeholder="350" />
@@ -199,14 +199,13 @@ export default {
             if (savedData) {
                 this.list = JSON.parse(savedData);
             } else {
-                // Стандартные демоны по умолчанию
                 this.list = [
                     { 
                         id: 1, 
                         name: "Slaughterhouse", 
                         author: "IcEDCave", 
                         verifier: "Doggie",
-                        image: "https://i.ytimg.com/vi/386sP_7159c/maxresdefault.jpg", 
+                        image: "", // Пусто -> возьмется превью из видео
                         video: "https://www.youtube.com/watch?v=386sP_7159c",
                         points: 350,
                         records: [
@@ -218,7 +217,7 @@ export default {
                         name: "Acheron", 
                         author: "Ryamu", 
                         verifier: "Trick",
-                        image: "https://i.ytimg.com/vi/q4_J-sS78Lg/maxresdefault.jpg", 
+                        image: "", 
                         video: "https://www.youtube.com/watch?v=q4_J-sS78Lg",
                         points: 330,
                         records: []
@@ -226,7 +225,6 @@ export default {
                 ];
             }
 
-            // При запуске ничего не выделяем
             this.selectedLevel = null;
             this.loading = false;
         },
@@ -235,24 +233,55 @@ export default {
             localStorage.setItem('pointercrate_demonlist', JSON.stringify(this.list));
         },
 
-        /* ПРОВЕРКА: ВЫБРАН ЛИ ИМЕННО ЭТОТ УРОВЕНЬ */
+        /* ПРИОРИТЕТ КАРТИНКИ: КАСТОМНАЯ ССЫЛКА -> ПРЕВЬЮ YOUTUBE -> ЗАГЛУШКА */
+        getImage(level) {
+            // 1. Если кастомная картинка явно задана, используем её
+            if (level.image && level.image.trim() !== "") {
+                return level.image.trim();
+            }
+
+            // 2. Если задано видео, достаем ID и ставим превью с YouTube
+            if (level.video) {
+                const youtubeId = this.getYouTubeId(level.video);
+                if (youtubeId) {
+                    return `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+                }
+            }
+
+            // 3. Запасной дефолтный аватар
+            return 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
+        },
+
+        /* ВЫТАСКИВАЕМ ID YOUTUBE ДЛЯ ПРЕВЬЮ И ИФРЕЙМА */
+        getYouTubeId(url) {
+            if (!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        },
+
+        getEmbedVideo(url) {
+            const id = this.getYouTubeId(url);
+            return id ? `https://www.youtube.com/embed/${id}` : url;
+        },
+
+        onImageError(e) {
+            e.target.src = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
+        },
+
         isSelected(level) {
             if (!this.selectedLevel) return false;
             return this.selectedLevel.id ? (this.selectedLevel.id === level.id) : (this.selectedLevel.name === level.name);
         },
 
-        /* КЛИК ПО КАРТОЧКЕ: ВЫБРАТЬ / СНЯТЬ ВЫДЕЛЕНИЕ */
         toggleSelectLevel(level) {
             if (this.isSelected(level)) {
-                // Если повторно нажимаем на этот же уровень — снимаем выбор!
                 this.selectedLevel = null;
             } else {
-                // Выбираем новый
                 this.selectedLevel = level;
             }
         },
 
-        /* DRAG & DROP ПЕРЕТАСКИВАНИЕ */
         onDragStart(index, event) {
             this.dragIndex = index;
             event.dataTransfer.effectAllowed = "move";
@@ -268,23 +297,6 @@ export default {
         onDrop() {
             this.dragIndex = null;
             this.saveData();
-        },
-
-        /* ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ */
-        getImage(level) {
-            if (level.image) return level.image;
-            return 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
-        },
-
-        onImageError(e) {
-            e.target.src = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
-        },
-
-        getEmbedVideo(url) {
-            if (!url) return '';
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : url;
         },
 
         addLevel() {
