@@ -1,195 +1,46 @@
 /* ==========================================
-   Pointercrate 1:1 Pixel-Perfect Theme
+   CLEAN GLOBAL / MAIN STYLING
    ========================================== */
 
-:root {
-    --pc-blue: #0b70a4;
-    --pc-blue-hover: #08537a;
-    --pc-bg: #f8f9fa;
-    --pc-card-bg: #ffffff;
-    --pc-border: #e1e8ed;
-    --pc-border-dashed: #cccccc;
-    --pc-text-main: #333333;
-    --pc-text-muted: #777777;
-}
-
+/* 1. Сброс жестких отступов */
 * {
-    box-sizing: border-box;
+    box-sizing: border-box !important;
     margin: 0;
     padding: 0;
 }
 
-body {
-    background-color: var(--pc-bg) !important;
-    color: var(--pc-text-main) !important;
+html, body {
+    width: 100% !important;
+    min-height: 100vh !important;
+    background-color: #f8f9fa !important;
     font-family: Arial, Helvetica, sans-serif !important;
-    /* Узоры из синих квадратов по бокам как на оригинал-скриншоте */
-    background-image: 
-        radial-gradient(circle at 2% 20%, rgba(11, 112, 164, 0.15) 0%, transparent 20%),
-        radial-gradient(circle at 98% 20%, rgba(11, 112, 164, 0.15) 0%, transparent 20%),
-        linear-gradient(90deg, #1880b8 0%, #1880b8 100px, transparent 100px, transparent calc(100% - 100px), #1880b8 calc(100% - 100px));
-    background-repeat: repeat-y;
-    min-height: 100vh;
+    color: #333333 !important;
+    overflow-x: hidden;
 }
 
-/* === ВЕРХНЯЯ ШАПКА И НАВИГАЦИЯ === */
+/* 2. Чистая шапка сайта (Убирает растягивание поиска и кнопок) */
 header, nav, .navbar {
-    background-color: #ffffff !important;
-    border-bottom: 1px solid var(--pc-border) !important;
-    width: 100%;
-    padding: 10px 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.nav-container {
-    max-width: 960px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 15px;
-}
-
-/* === ГЛАВНЫЙ МАКЕТ (Сетка) === */
-main, .main-container, .wrapper, .container {
-    max-width: 960px !important;
-    margin: 0 auto !important;
-    padding: 20px 15px !important;
-    display: grid !important;
-    grid-template-columns: 1fr 320px !important; /* Слева список, справа блоки */
-    gap: 20px !important;
-    background: transparent !important;
-}
-
-/* Переключатели табов (Main-лист / Extended-лист / Legacy-лист) */
-.tabs, .list-selector {
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    border-bottom: 1px dashed var(--pc-border-dashed);
-    padding-bottom: 12px;
-    margin-bottom: 10px;
-}
-
-.tabs a, .tabs button {
-    color: var(--pc-text-muted);
-    font-weight: bold;
-    font-size: 0.9rem;
-    text-decoration: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-.tabs a.active, .tabs button.active {
-    color: var(--pc-text-main);
-    border-bottom: 2px solid var(--pc-text-main);
-}
-
-/* === КАРТОЧКИ УРОВНЕЙ (ЛЕВАЯ КОЛОНКА) === */
-.level-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.level-card, [class*="level-item"] {
-    background-color: var(--pc-card-bg) !important;
-    border: 1px dashed var(--pc-border-dashed) !important;
-    border-radius: 4px !important;
-    padding: 12px !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #e1e8ed !important;
+    padding: 10px 20px !important;
     display: flex !important;
     align-items: center !important;
-    gap: 15px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    justify-content: space-between !important;
 }
 
-.level-card:hover {
-    border-color: var(--pc-blue) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
-}
-
-/* Превью превью уровня */
-.level-card img, [class*="thumbnail"] {
-    width: 140px !important;
-    height: 80px !important;
-    object-fit: cover !important;
-    border-radius: 3px !important;
-    border: 1px solid var(--pc-border) !important;
-}
-
-/* Информация об уровне внутри карточки */
-.level-info {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.level-title, .level-name {
-    font-size: 1.1rem !important;
-    font-weight: bold !important;
-    color: var(--pc-text-main) !important;
-    margin-bottom: 4px !important;
-}
-
-.level-author, .level-publisher {
-    font-size: 0.85rem !important;
-    color: var(--pc-text-muted) !important;
-}
-
-.level-points {
-    font-size: 0.8rem !important;
-    color: #888888 !important;
-    margin-top: 6px !important;
-}
-
-/* === ПРАВАЯ КОЛОНКА (МОДЕРАТОРЫ, ПРАВИЛА, ОТПРАВКА) === */
-.sidebar, .right-column {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.panel-box, .card-box, [class*="sidebar"] > div {
-    background-color: var(--pc-card-bg) !important;
-    border: 1px dashed var(--pc-border-dashed) !important;
-    border-radius: 4px !important;
-    padding: 16px !important;
-    text-align: center;
-}
-
-.panel-box h3, .panel-title {
-    font-size: 1rem !important;
-    font-weight: bold !important;
-    color: var(--pc-text-main) !important;
-    margin-bottom: 12px !important;
-    border-bottom: 1px solid #f0f0f0;
-    padding-bottom: 6px;
-}
-
-.panel-box p, .panel-box span {
-    font-size: 0.82rem !important;
-    color: var(--pc-text-muted) !important;
-    line-height: 1.4 !important;
-}
-
-/* === СИНИЕ КНОПКИ POINTERCRATE === */
-button, .btn, .blue-btn, input[type="submit"] {
+/* 3. Фикс главного Vue/HTML контейнера (Разворачивает страницу из 0px) */
+#app, main, .main-layout, .container, .wrapper {
     width: 100% !important;
-    background-color: var(--pc-blue) !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 3px !important;
-    padding: 10px 15px !important;
-    font-weight: bold !important;
-    font-size: 0.85rem !important;
-    cursor: pointer !important;
-    transition: background-color 0.2s ease !important;
-    margin-top: 10px;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 20px 15px !important;
+    position: static !important; /* Отменяет абсолютное позиционирование */
 }
 
-button:hover, .btn:hover, .blue-btn:hover {
-    background-color: var(--pc-blue-hover) !important;
+/* 4. Безопасный сброс для медиафайлов */
+img, video, iframe {
+    max-width: 100% !important;
+    height: auto !important;
+    position: static !important;
 }
