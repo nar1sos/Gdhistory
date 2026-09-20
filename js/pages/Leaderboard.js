@@ -94,11 +94,11 @@ export default {
                                 <button class="btn-small" @click="showAddDemonModal = true">+ Демон</button>
                             </div>
                             <ul class="records-list" v-if="selectedPlayer.demons && selectedPlayer.demons.length">
-                                <li v-for="(dem, dIdx) in selectedPlayer.demons" :key="dIdx">
-                                    <div class="rec-info">
-                                        <strong>{{ dem.name }}</strong> ({{ dem.percent || 100 }}%)
+                                <li v-for="(dem, dIdx) in selectedPlayer.demons" :key="dIdx" style="cursor: pointer;" title="Кликните, чтобы изменить">
+                                    <div class="rec-info" @click="editDemon(dIdx)">
+                                        <strong>{{ dem.name }}</strong> ({{ formatPercent(dem.percent) }})
                                     </div>
-                                    <button class="btn-del-sm" @click="removeDemonFromPlayer(dIdx)">✕</button>
+                                    <button class="btn-del-sm" @click.stop="removeDemonFromPlayer(dIdx)">✕</button>
                                 </li>
                             </ul>
                             <p v-else class="empty-text">Нет прикрепленных прохождений.</p>
@@ -142,8 +142,8 @@ export default {
                         <label>Название уровня:
                             <input v-model="newDemon.name" required placeholder="например, Tidal Wave" />
                         </label>
-                        <label>Процент прохождения (%):
-                            <input type="number" v-model.number="newDemon.percent" value="100" min="1" max="100" />
+                        <label>Процент прохождения (% или диапазон):
+                            <input type="text" v-model="newDemon.percent" placeholder="100 или 33-100" required />
                         </label>
                         <div class="modal-actions">
                             <button type="submit" class="btn-primary">Прикрепить</button>
@@ -165,7 +165,7 @@ export default {
         showAddPlayerModal: false,
         showAddDemonModal: false,
         newPlayer: { name: "", country: "", avatar: "", points: 0 },
-        newDemon: { name: "", percent: 100 }
+        newDemon: { name: "", percent: "100" }
     }),
 
     computed: {
@@ -188,9 +188,9 @@ export default {
                 this.leaderboard = JSON.parse(savedLeaderboard);
             } else {
                 this.leaderboard = [
-                    { id: 1, name: "Твой Ник (Топ 1)", country: "ru", avatar: "", points: 2500, demons: [{ name: "Tidal Wave", percent: 100 }] },
-                    { id: 2, name: "Zoink", country: "us", avatar: "", points: 2100, demons: [{ name: "Acheron", percent: 100 }] },
-                    { id: 3, name: "Doggie", country: "us", avatar: "", points: 1800, demons: [{ name: "Grief", percent: 100 }] }
+                    { id: 1, name: "Твой Ник (Топ 1)", country: "ru", avatar: "", points: 2500, demons: [{ name: "Tidal Wave", percent: "100" }] },
+                    { id: 2, name: "Zoink", country: "us", avatar: "", points: 2100, demons: [{ name: "Acheron", percent: "33-100" }] },
+                    { id: 3, name: "Doggie", country: "us", avatar: "", points: 1800, demons: [{ name: "Grief", percent: "100" }] }
                 ];
             }
 
@@ -202,6 +202,12 @@ export default {
 
         saveData() {
             localStorage.setItem('custom_leaderboard', JSON.stringify(this.leaderboard));
+        },
+
+        formatPercent(val) {
+            if (!val && val !== 0) return '100%';
+            const str = String(val).trim();
+            return str.endsWith('%') ? str : `${str}%`;
         },
 
         /* ФЛАГИ ИЗОБРАЖЕНИЙ */
@@ -289,11 +295,25 @@ export default {
             if (!this.selectedPlayer) return;
             if (!this.selectedPlayer.demons) this.selectedPlayer.demons = [];
 
-            this.selectedPlayer.demons.push({ ...this.newDemon });
+            this.selectedPlayer.demons.push({
+                name: this.newDemon.name,
+                percent: this.newDemon.percent || "100"
+            });
             this.saveData();
 
             this.showAddDemonModal = false;
-            this.newDemon = { name: "", percent: 100 };
+            this.newDemon = { name: "", percent: "100" };
+        },
+
+        editDemon(dIdx) {
+            if (!this.selectedPlayer || !this.selectedPlayer.demons[dIdx]) return;
+            const demon = this.selectedPlayer.demons[dIdx];
+            
+            const newPercent = prompt(`Введите новый процент или диапазон для "${demon.name}" (например: 100 или 33-100):`, demon.percent || "100");
+            if (newPercent !== null) {
+                demon.percent = newPercent.trim();
+                this.saveData();
+            }
         },
 
         removeDemonFromPlayer(dIdx) {
