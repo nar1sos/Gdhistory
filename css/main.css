@@ -1,128 +1,195 @@
 /* ==========================================
-   Pointercrate Authentic Theme
+   Pointercrate 1:1 Pixel-Perfect Theme
    ========================================== */
 
 :root {
-    --pc-bg: #f7f9fa;
+    --pc-blue: #0b70a4;
+    --pc-blue-hover: #08537a;
+    --pc-bg: #f8f9fa;
     --pc-card-bg: #ffffff;
     --pc-border: #e1e8ed;
-    --pc-text-dark: #292f33;
-    --pc-text-muted: #657786;
-    --pc-blue: #0070c0;
-    --pc-blue-hover: #005696;
-    --pc-link: #1da1f2;
-    --pc-card-radius: 4px;
+    --pc-border-dashed: #cccccc;
+    --pc-text-main: #333333;
+    --pc-text-muted: #777777;
 }
 
-/* Фоны и общие шрифты */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     background-color: var(--pc-bg) !important;
-    color: var(--pc-text-dark) !important;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+    color: var(--pc-text-main) !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    /* Узоры из синих квадратов по бокам как на оригинал-скриншоте */
+    background-image: 
+        radial-gradient(circle at 2% 20%, rgba(11, 112, 164, 0.15) 0%, transparent 20%),
+        radial-gradient(circle at 98% 20%, rgba(11, 112, 164, 0.15) 0%, transparent 20%),
+        linear-gradient(90deg, #1880b8 0%, #1880b8 100px, transparent 100px, transparent calc(100% - 100px), #1880b8 calc(100% - 100px));
+    background-repeat: repeat-y;
+    min-height: 100vh;
 }
 
-/* Все главные контейнеры/колонки */
-.main, .container, .wrapper, [class*="container"], [class*="layout"] {
-    background-color: transparent !important;
-}
-
-/* 1. Поисковая строка (Сверху) */
-input[type="text"], .search-bar, [class*="search"] {
-    background-color: var(--pc-card-bg) !important;
-    border: 1px solid var(--pc-border) !important;
-    border-radius: var(--pc-card-radius) !important;
-    color: var(--pc-text-dark) !important;
-    padding: 10px 14px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
-}
-
-/* 2. Карточки (Левая колонка, Карточка уровня в центре, Правая колонка) */
-.card, .panel, .box, [class*="card"], [class*="panel"], [class*="sidebar"] {
-    background-color: var(--pc-card-bg) !important;
-    border: 1px solid var(--pc-border) !important;
-    border-radius: var(--pc-card-radius) !important;
-    color: var(--pc-text-dark) !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
-}
-
-/* 3. Карточка уровня в центральном списке (Pointercrate Style) */
-.level-card, [class*="level-item"], [class*="levelCard"] {
-    background-color: var(--pc-card-bg) !important;
-    border: 1px solid var(--pc-border) !important;
-    border-left: 4px solid var(--pc-border) !important;
-    border-radius: var(--pc-card-radius) !important;
-    padding: 12px 16px !important;
-    transition: all 0.15s ease-in-out !important;
-}
-
-/* Активная или выбранная карточка уровня (Синяя полоса слева) */
-.level-card.active, .level-card:hover, [class*="level-item"]:hover {
-    border-left: 4px solid var(--pc-blue) !important;
-    border-color: var(--pc-border) var(--pc-border) var(--pc-border) var(--pc-blue) !important;
+/* === ВЕРХНЯЯ ШАПКА И НАВИГАЦИЯ === */
+header, nav, .navbar {
     background-color: #ffffff !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    border-bottom: 1px solid var(--pc-border) !important;
+    width: 100%;
+    padding: 10px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-/* Картинка-превью уровня в карточке */
-.level-card img, [class*="thumbnail"], [class*="thumb"] {
+.nav-container {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+}
+
+/* === ГЛАВНЫЙ МАКЕТ (Сетка) === */
+main, .main-container, .wrapper, .container {
+    max-width: 960px !important;
+    margin: 0 auto !important;
+    padding: 20px 15px !important;
+    display: grid !important;
+    grid-template-columns: 1fr 320px !important; /* Слева список, справа блоки */
+    gap: 20px !important;
+    background: transparent !important;
+}
+
+/* Переключатели табов (Main-лист / Extended-лист / Legacy-лист) */
+.tabs, .list-selector {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    border-bottom: 1px dashed var(--pc-border-dashed);
+    padding-bottom: 12px;
+    margin-bottom: 10px;
+}
+
+.tabs a, .tabs button {
+    color: var(--pc-text-muted);
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.tabs a.active, .tabs button.active {
+    color: var(--pc-text-main);
+    border-bottom: 2px solid var(--pc-text-main);
+}
+
+/* === КАРТОЧКИ УРОВНЕЙ (ЛЕВАЯ КОЛОНКА) === */
+.level-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.level-card, [class*="level-item"] {
+    background-color: var(--pc-card-bg) !important;
+    border: 1px dashed var(--pc-border-dashed) !important;
+    border-radius: 4px !important;
+    padding: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.level-card:hover {
+    border-color: var(--pc-blue) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+
+/* Превью превью уровня */
+.level-card img, [class*="thumbnail"] {
+    width: 140px !important;
+    height: 80px !important;
+    object-fit: cover !important;
     border-radius: 3px !important;
     border: 1px solid var(--pc-border) !important;
 }
 
-/* 4. Текст, Заголовки и Ссылки */
-h1, h2, h3, h4, h5, h6, .title, [class*="title"] {
-    color: var(--pc-text-dark) !important;
-    font-weight: 700 !important;
+/* Информация об уровне внутри карточки */
+.level-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-p, span, div, li, label {
-    color: var(--pc-text-dark);
+.level-title, .level-name {
+    font-size: 1.1rem !important;
+    font-weight: bold !important;
+    color: var(--pc-text-main) !important;
+    margin-bottom: 4px !important;
 }
 
-.subtext, .muted, [class*="by"], [class*="author"], [class*="verifier"] {
+.level-author, .level-publisher {
+    font-size: 0.85rem !important;
     color: var(--pc-text-muted) !important;
 }
 
-/* Ссылки на никнеймы авторов/верификаторов */
-a, .link, [class*="author"] a, [class*="verifier"] a {
-    color: var(--pc-blue) !important;
-    text-decoration: none !important;
-    font-weight: 600 !important;
+.level-points {
+    font-size: 0.8rem !important;
+    color: #888888 !important;
+    margin-top: 6px !important;
 }
 
-a:hover {
-    text-decoration: underline !important;
+/* === ПРАВАЯ КОЛОНКА (МОДЕРАТОРЫ, ПРАВИЛА, ОТПРАВКА) === */
+.sidebar, .right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-/* Номер позиций (#1, #2 и т.д.) */
-.rank, [class*="rank"], [class*="position"] {
-    color: var(--pc-text-dark) !important;
-    font-weight: 800 !important;
-}
-
-/* 5. Правая колонка: Статистика уровня (Points, Qualify, Records) */
-[class*="stats"], [class*="info-box"], [class*="stat-item"] {
-    background-color: #f8fafc !important;
-    border: 1px solid var(--pc-border) !important;
+.panel-box, .card-box, [class*="sidebar"] > div {
+    background-color: var(--pc-card-bg) !important;
+    border: 1px dashed var(--pc-border-dashed) !important;
     border-radius: 4px !important;
-    color: var(--pc-text-dark) !important;
+    padding: 16px !important;
+    text-align: center;
 }
 
-/* Цифры статистики */
-[class*="stat-value"], [class*="points"] {
-    color: var(--pc-blue) !important;
-    font-weight: 700 !important;
+.panel-box h3, .panel-title {
+    font-size: 1rem !important;
+    font-weight: bold !important;
+    color: var(--pc-text-main) !important;
+    margin-bottom: 12px !important;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 6px;
 }
 
-/* 6. Список рекордов снизу справа */
-[class*="record-item"], [class*="recordRow"] {
-    background-color: #ffffff !important;
-    border-bottom: 1px solid var(--pc-border) !important;
-    color: var(--pc-text-dark) !important;
+.panel-box p, .panel-box span {
+    font-size: 0.82rem !important;
+    color: var(--pc-text-muted) !important;
+    line-height: 1.4 !important;
 }
 
-/* Видеоплайер YouTube */
-iframe, video, [class*="video"] {
-    border-radius: 4px !important;
-    border: 1px solid var(--pc-border) !important;
+/* === СИНИЕ КНОПКИ POINTERCRATE === */
+button, .btn, .blue-btn, input[type="submit"] {
+    width: 100% !important;
+    background-color: var(--pc-blue) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 3px !important;
+    padding: 10px 15px !important;
+    font-weight: bold !important;
+    font-size: 0.85rem !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+    margin-top: 10px;
+}
+
+button:hover, .btn:hover, .blue-btn:hover {
+    background-color: var(--pc-blue-hover) !important;
 }
