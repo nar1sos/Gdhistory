@@ -10,7 +10,7 @@ export default {
         <div v-else class="pointer-wrapper">
             <div class="pointer-layout">
                 
-                <!-- ЛЕВАЯ КОЛОНКА: ЛИДЕРБОРД С DRAG & DROP -->
+                <!-- ЛЕВАЯ КОЛОНКА: ЛИДЕРБОРД С АВАТАРКАМИ И DRAG & DROP -->
                 <div class="list-side">
                     <div 
                         v-for="(player, index) in filteredLeaderboard" 
@@ -26,8 +26,13 @@ export default {
                         @drop="onDrop(index)"
                         @click="selectedPlayer = player"
                     >
-                        <div class="drag-handle" title="Зажми ЛКМ и потяни, чтобы изменить ранг игрока">⣿</div>
+                        <div class="drag-handle" title="Зажми ЛКМ и потяни, чтобы изменить ранг">⣿</div>
                         
+                        <!-- АВАТАРКА ИГРОКА В СПИСКЕ -->
+                        <div class="card-thumb player-avatar-thumb">
+                            <img :src="getAvatar(player)" @error="onAvatarError" alt="Avatar" />
+                        </div>
+
                         <div class="card-text">
                             <div class="card-title">#{{ index + 1 }} - {{ player.name }}</div>
                             <div class="card-sub">Пройдено демонов: <strong>{{ player.demons ? player.demons.length : 0 }}</strong></div>
@@ -58,7 +63,13 @@ export default {
 
                     <!-- ИНФОРМАЦИЯ О ВЫБРАННОМ ИГРОКЕ -->
                     <div class="side-box" v-if="selectedPlayer">
-                        <h2 class="level-heading">#{{ getPlayerRank(selectedPlayer) }} {{ selectedPlayer.name }}</h2>
+                        <div class="player-profile-header">
+                            <img :src="getAvatar(selectedPlayer)" @error="onAvatarError" class="profile-avatar" />
+                            <div>
+                                <h2 class="level-heading" style="margin: 0;">#{{ getPlayerRank(selectedPlayer) }} {{ selectedPlayer.name }}</h2>
+                                <button class="btn-reset" style="text-align: left; padding: 0; margin-top: 4px;" @click="editAvatar(selectedPlayer)">Изменить аватарку</button>
+                            </div>
+                        </div>
                         
                         <div class="stats-row" style="margin-bottom: 15px;">
                             <div><span>POINTS</span> <strong>{{ selectedPlayer.points || calculatePoints(selectedPlayer) }}</strong></div>
@@ -94,6 +105,9 @@ export default {
                     <form @submit.prevent="addPlayer">
                         <label>Никнейм игрока:
                             <input v-model="newPlayer.name" required placeholder="например, Zoink" />
+                        </label>
+                        <label>URL аватарки (картинка):
+                            <input v-model="newPlayer.avatar" placeholder="https://i.imgur.com/..." />
                         </label>
                         <label>Начальные очки (pts):
                             <input type="number" v-model.number="newPlayer.points" placeholder="1000" />
@@ -136,7 +150,7 @@ export default {
         dragIndex: null,
         showAddPlayerModal: false,
         showAddDemonModal: false,
-        newPlayer: { name: "", points: 0 },
+        newPlayer: { name: "", avatar: "", points: 0 },
         newDemon: { name: "", percent: 100 }
     }),
 
@@ -159,11 +173,10 @@ export default {
             if (savedLeaderboard) {
                 this.leaderboard = JSON.parse(savedLeaderboard);
             } else {
-                // Стартовый лидерборд
                 this.leaderboard = [
-                    { id: 1, name: "Твой Ник (Топ 1)", points: 2500, demons: [{ name: "Tidal Wave", percent: 100 }] },
-                    { id: 2, name: "Zoink", points: 2100, demons: [{ name: "Acheron", percent: 100 }] },
-                    { id: 3, name: "Doggie", points: 1800, demons: [{ name: "Grief", percent: 100 }] }
+                    { id: 1, name: "Твой Ник (Топ 1)", avatar: "", points: 2500, demons: [{ name: "Tidal Wave", percent: 100 }] },
+                    { id: 2, name: "Zoink", avatar: "", points: 2100, demons: [{ name: "Acheron", percent: 100 }] },
+                    { id: 3, name: "Doggie", avatar: "", points: 1800, demons: [{ name: "Grief", percent: 100 }] }
                 ];
             }
 
@@ -177,7 +190,7 @@ export default {
             localStorage.setItem('custom_leaderboard', JSON.stringify(this.leaderboard));
         },
 
-        /* DRAG & DROP ДЛЯ ИГРОКОВ */
+        /* DRAG & DROP */
         onDragStart(index, event) {
             this.dragIndex = index;
             event.dataTransfer.effectAllowed = "move";
@@ -195,11 +208,12 @@ export default {
             this.saveData();
         },
 
-        /* УПРАВЛЕНИЕ ИГРОКАМИ */
+        /* ИГРОКИ И АВАТАРКИ */
         addPlayer() {
             const playerObj = {
                 id: Date.now(),
                 name: this.newPlayer.name,
+                avatar: this.newPlayer.avatar,
                 points: this.newPlayer.points || 0,
                 demons: []
             };
@@ -209,7 +223,25 @@ export default {
             this.saveData();
 
             this.showAddPlayerModal = false;
-            this.newPlayer = { name: "", points: 0 };
+            this.newPlayer = { name: "", avatar: "", points: 0 };
+        },
+
+        editAvatar(player) {
+            const newUrl = prompt("Введите новый URL аватарки:", player.avatar || "");
+            if (newUrl !== null) {
+                player.avatar = newUrl.trim();
+                this.saveData();
+            }
+        },
+
+        getAvatar(player) {
+            if (player && player.avatar) return player.avatar;
+            // Дефолтная иконка, если URL не указан
+            return 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
+        },
+
+        onAvatarError(e) {
+            e.target.src = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
         },
 
         removePlayer(index) {
@@ -223,7 +255,7 @@ export default {
             }
         },
 
-        /* ДЕМОНЫ ИГРОКА */
+        /* ДЕМОНЫ */
         addDemonToPlayer() {
             if (!this.selectedPlayer) return;
             if (!this.selectedPlayer.demons) this.selectedPlayer.demons = [];
