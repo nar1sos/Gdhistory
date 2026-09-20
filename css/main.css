@@ -1,46 +1,86 @@
 /* ==========================================
-   CLEAN GLOBAL / MAIN STYLING
+   POINTERCRATE GLOBAL & FIXING STYLES
    ========================================== */
 
-/* 1. Сброс жестких отступов */
-* {
-    box-sizing: border-box !important;
-    margin: 0;
-    padding: 0;
-}
-
+/* 1. ФОН СИНИЙ С УЗОРОМ (Возвращаем синие акценты по бокам) */
 html, body {
-    width: 100% !important;
-    min-height: 100vh !important;
     background-color: #f8f9fa !important;
-    font-family: Arial, Helvetica, sans-serif !important;
     color: #333333 !important;
-    overflow-x: hidden;
+    font-family: Arial, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background-image: 
+        linear-gradient(90deg, #1880b8 0%, #1880b8 90px, transparent 90px, transparent calc(100% - 90px), #1880b8 calc(100% - 90px)) !important;
+    background-repeat: repeat-y !important;
+    min-height: 100vh !important;
 }
 
-/* 2. Чистая шапка сайта (Убирает растягивание поиска и кнопок) */
-header, nav, .navbar {
-    width: 100% !important;
-    background: #ffffff !important;
+/* 2. ШАПКА (Сверху) */
+header, nav, [class*="nav"] {
+    background-color: #ffffff !important;
     border-bottom: 1px solid #e1e8ed !important;
     padding: 10px 20px !important;
     display: flex !important;
-    align-items: center !important;
     justify-content: space-between !important;
+    align-items: center !important;
 }
 
-/* 3. Фикс главного Vue/HTML контейнера (Разворачивает страницу из 0px) */
-#app, main, .main-layout, .container, .wrapper {
-    width: 100% !important;
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-    padding: 20px 15px !important;
-    position: static !important; /* Отменяет абсолютное позиционирование */
+/* 3. ФИКС ГЛАВНОГО КОНТЕЙНЕРА (Исправляет кучу в 0px) */
+main, #app > div, .main-content, body > div {
+    max-width: 1100px !important;
+    margin: 20px auto !important;
+    padding: 0 10px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 20px !important;
+    align-items: flex-start !important;
+    box-sizing: border-box !important;
 }
 
-/* 4. Безопасный сброс для медиафайлов */
-img, video, iframe {
-    max-width: 100% !important;
-    height: auto !important;
+/* Левая часть (Сайдбар с редакторами) */
+main > *:first-child, [class*="left"], aside {
+    width: 280px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15px !important;
+}
+
+/* Правая часть (Контент уровня и карточки) */
+main > *:nth-child(2), [class*="right"], section {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15px !important;
+    min-width: 0 !important;
+}
+
+/* 4. СБРОС АБСОЛЮТНОГО ПОЗИЦИОНИРОВАНИЯ (Наложение текстов и картинок) */
+main div, main img, main iframe, main p, main h1, main h2, main h3 {
     position: static !important;
+    float: none !important;
+}
+
+/* Все блоки делаем белыми плашками с пунктирной рамкой */
+main div[class*="card"], 
+main div[class*="box"], 
+main div[class*="sidebar"],
+main section > div {
+    background: #ffffff !important;
+    border: 1px dashed #cccccc !important;
+    border-radius: 4px !important;
+    padding: 12px !important;
+    color: #333333 !important;
+}
+
+/* Размеры видеоплеера */
+iframe, video {
+    width: 100% !important;
+    height: 300px !important;
+    border-radius: 4px !important;
+}
+
+/* Ссылки и авторы */
+a, [class*="author"], [class*="verifier"] {
+    color: #0b70a4 !important;
 }
