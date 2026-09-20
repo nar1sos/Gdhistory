@@ -1,145 +1,128 @@
 /* ==========================================
-   Pointercrate Theme Stylesheet
+   Pointercrate Authentic Theme
    ========================================== */
 
 :root {
-    --bg-main: #f4f6f9;
-    --bg-card: #ffffff;
-    --text-primary: #333333;
-    --text-secondary: #666666;
-    --accent-blue: #0070c0;
-    --accent-blue-hover: #005a9e;
-    --border-color: #e2e8f0;
-    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.12);
-    --border-radius: 6px;
+    --pc-bg: #f7f9fa;
+    --pc-card-bg: #ffffff;
+    --pc-border: #e1e8ed;
+    --pc-text-dark: #292f33;
+    --pc-text-muted: #657786;
+    --pc-blue: #0070c0;
+    --pc-blue-hover: #005696;
+    --pc-link: #1da1f2;
+    --pc-card-radius: 4px;
 }
 
-/* Общие стили страницы */
+/* Фоны и общие шрифты */
 body {
-    background-color: var(--bg-main);
-    color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0;
-    padding: 0;
+    background-color: var(--pc-bg) !important;
+    color: var(--pc-text-dark) !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
 }
 
-/* Контейнер страницы */
-.container, main, .content {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 20px 15px;
+/* Все главные контейнеры/колонки */
+.main, .container, .wrapper, [class*="container"], [class*="layout"] {
+    background-color: transparent !important;
 }
 
-/* Шапка и навигация */
-header, nav {
-    background-color: #ffffff;
-    border-bottom: 1px solid var(--border-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+/* 1. Поисковая строка (Сверху) */
+input[type="text"], .search-bar, [class*="search"] {
+    background-color: var(--pc-card-bg) !important;
+    border: 1px solid var(--pc-border) !important;
+    border-radius: var(--pc-card-radius) !important;
+    color: var(--pc-text-dark) !important;
+    padding: 10px 14px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
 }
 
-nav a {
-    color: var(--text-primary);
-    text-decoration: none;
-    font-weight: 600;
-    padding: 10px 15px;
-    transition: color 0.2s ease;
+/* 2. Карточки (Левая колонка, Карточка уровня в центре, Правая колонка) */
+.card, .panel, .box, [class*="card"], [class*="panel"], [class*="sidebar"] {
+    background-color: var(--pc-card-bg) !important;
+    border: 1px solid var(--pc-border) !important;
+    border-radius: var(--pc-card-radius) !important;
+    color: var(--pc-text-dark) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 
-nav a:hover, nav a.active {
-    color: var(--accent-blue);
+/* 3. Карточка уровня в центральном списке (Pointercrate Style) */
+.level-card, [class*="level-item"], [class*="levelCard"] {
+    background-color: var(--pc-card-bg) !important;
+    border: 1px solid var(--pc-border) !important;
+    border-left: 4px solid var(--pc-border) !important;
+    border-radius: var(--pc-card-radius) !important;
+    padding: 12px 16px !important;
+    transition: all 0.15s ease-in-out !important;
 }
 
-/* Карточки уровней и элементов лидерборда */
-.card, .level-card, .leaderboard-item, .player-card {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    box-shadow: var(--card-shadow);
-    margin-bottom: 12px;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    transition: all 0.2s ease-in-out;
-    position: relative;
-    overflow: hidden;
+/* Активная или выбранная карточка уровня (Синяя полоса слева) */
+.level-card.active, .level-card:hover, [class*="level-item"]:hover {
+    border-left: 4px solid var(--pc-blue) !important;
+    border-color: var(--pc-border) var(--pc-border) var(--pc-border) var(--pc-blue) !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Эффект Pointercrate — синяя полоска слева при наведении / активном элементе */
-.card:hover, .level-card:hover, .leaderboard-item:hover {
-    border-color: var(--accent-blue);
-    box-shadow: var(--card-shadow-hover);
-    transform: translateY(-1px);
+/* Картинка-превью уровня в карточке */
+.level-card img, [class*="thumbnail"], [class*="thumb"] {
+    border-radius: 3px !important;
+    border: 1px solid var(--pc-border) !important;
 }
 
-.card.active, .leaderboard-item.active, .level-card.active {
-    border-left: 5px solid var(--accent-blue);
+/* 4. Текст, Заголовки и Ссылки */
+h1, h2, h3, h4, h5, h6, .title, [class*="title"] {
+    color: var(--pc-text-dark) !important;
+    font-weight: 700 !important;
 }
 
-/* Аватарки игроков */
-.avatar, .player-avatar, img.avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid var(--border-color);
-    margin-right: 14px;
-    background-color: #eee;
+p, span, div, li, label {
+    color: var(--pc-text-dark);
 }
 
-/* Ранг / Место в топе (#1, #2 и т.д.) */
-.rank, .level-rank, .player-rank {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--accent-blue);
-    margin-right: 12px;
-    min-width: 32px;
+.subtext, .muted, [class*="by"], [class*="author"], [class*="verifier"] {
+    color: var(--pc-text-muted) !important;
 }
 
-/* Названия и текст */
-.title, .level-name, .player-name {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
+/* Ссылки на никнеймы авторов/верификаторов */
+a, .link, [class*="author"] a, [class*="verifier"] a {
+    color: var(--pc-blue) !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
 }
 
-.subtitle, .author, .records-count {
-    font-size: 0.88rem;
-    color: var(--text-secondary);
-    margin-top: 2px;
+a:hover {
+    text-decoration: underline !important;
 }
 
-/* Кнопки в стиле Pointercrate */
-button, .btn, .button {
-    background-color: var(--accent-blue);
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+/* Номер позиций (#1, #2 и т.д.) */
+.rank, [class*="rank"], [class*="position"] {
+    color: var(--pc-text-dark) !important;
+    font-weight: 800 !important;
 }
 
-button:hover, .btn:hover, .button:hover {
-    background-color: var(--accent-blue-hover);
+/* 5. Правая колонка: Статистика уровня (Points, Qualify, Records) */
+[class*="stats"], [class*="info-box"], [class*="stat-item"] {
+    background-color: #f8fafc !important;
+    border: 1px solid var(--pc-border) !important;
+    border-radius: 4px !important;
+    color: var(--pc-text-dark) !important;
 }
 
-/* Боковые блоки и виджеты (Правая колонка) */
-.sidebar, .widget-box {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: 16px;
-    box-shadow: var(--card-shadow);
-    margin-bottom: 20px;
+/* Цифры статистики */
+[class*="stat-value"], [class*="points"] {
+    color: var(--pc-blue) !important;
+    font-weight: 700 !important;
 }
 
-.sidebar h3, .widget-box h3 {
-    margin-top: 0;
-    font-size: 1rem;
-    color: var(--text-primary);
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 8px;
+/* 6. Список рекордов снизу справа */
+[class*="record-item"], [class*="recordRow"] {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid var(--pc-border) !important;
+    color: var(--pc-text-dark) !important;
+}
+
+/* Видеоплайер YouTube */
+iframe, video, [class*="video"] {
+    border-radius: 4px !important;
+    border: 1px solid var(--pc-border) !important;
 }
