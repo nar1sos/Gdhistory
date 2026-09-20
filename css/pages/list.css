@@ -1,179 +1,110 @@
 /* ==========================================
-   POINTERCRATE CLEAN FLEXBOX LAYOUT
+   POINTERCRATE 3-COLUMN FIX FOR LIST.CSS
    ========================================== */
 
-/* Главный контейнер страницы */
-main, .list-container, #app-content {
+/* 1. Главная сетка на 3 колонки */
+.list-container, 
+main, 
+.content-wrapper,
+div[class*="list"] {
     display: flex !important;
     flex-direction: row !important;
     justify-content: center !important;
-    gap: 30px !important;
-    max-width: 1200px !important;
-    margin: 30px auto !important;
-    padding: 0 15px !important;
-    box-sizing: border-box !important;
     align-items: flex-start !important;
+    gap: 20px !important;
+    width: 100% !important;
+    max-width: 1280px !important;
+    margin: 20px auto !important;
+    box-sizing: border-box !important;
 }
 
-/* ------------------------------------------
-   ЛЕВАЯ КОЛОНКА (Поиск, Редакторы, Правила)
-   ------------------------------------------ */
-.sidebar, [class*="sidebar"], aside {
-    width: 280px !important;
+/* 2. ЛЕВАЯ КОЛОНКА (List Editors & Rules) */
+.list-sidebar, 
+.sidebar, 
+aside,
+main > div:first-child {
+    width: 240px !important;
+    min-width: 240px !important;
     flex-shrink: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 15px !important;
 }
 
-/* Поиск */
-.search-container input, input[type="text"] {
-    width: 100% !important;
-    background: #ffffff !important;
-    border: 1px dashed #cccccc !important;
-    border-radius: 4px !important;
-    padding: 8px 12px !important;
-    color: #333333 !important;
-    box-sizing: border-box !important;
-}
-
-/* Карточки в левой колонке */
-.sidebar-card, .editors-card, .rules-card, .sidebar > div {
-    background: #ffffff !important;
-    border: 1px dashed #cccccc !important;
-    border-radius: 4px !important;
-    padding: 15px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
-}
-
-.sidebar h2, .sidebar h3, .sidebar strong {
-    color: #333333 !important;
-    font-size: 1rem !important;
-    margin-top: 0 !important;
-}
-
-.sidebar p, .sidebar li {
-    color: #666666 !important;
-    font-size: 0.85rem !important;
-}
-
-
-/* ------------------------------------------
-   ПРАВАЯ КОЛОНКА (Видео + Данные + Список)
-   ------------------------------------------ */
-.content, .main-content, [class*="content"] {
-    flex: 1 !important;
+/* 3. СРЕДНЯЯ КОЛОНКА (Список уровней) */
+.level-list, 
+.list-content,
+main > div:nth-child(2) {
+    width: 320px !important;
+    min-width: 300px !important;
+    flex-shrink: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 20px !important;
-    min-width: 0 !important; /* Предотвращает переполнение */
+    gap: 10px !important;
 }
 
-/* Блок просмотра выбранного уровня */
-.level-view, .level-details, [class*="level-view"] {
-    background: #ffffff !important;
-    border: 1px dashed #cccccc !important;
-    border-radius: 4px !important;
-    padding: 20px !important;
+/* 4. ПРАВАЯ КОЛОНКА (Информация об уровне, Видео, Рекорды) */
+.level-view, 
+.level-details, 
+.panel-right,
+main > div:nth-child(3) {
+    flex: 1 !important;
+    min-width: 400px !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 15px !important;
 }
 
-/* Заголовок уровня (#1 Kawai Unleashed) */
-.level-view h1, .level-view h2 {
-    color: #333333 !important;
-    font-size: 1.8rem !important;
-    font-weight: 800 !important;
-    margin: 0 !important;
-}
-
-/* Видеоплеер */
-.level-view iframe, .level-view video, .video-container {
-    width: 100% !important;
-    height: 320px !important;
-    border-radius: 4px !important;
-    border: 1px solid #e1e8ed !important;
-}
-
-/* Статистика (POINTS, QUALIFY, RECORDS) в одну строку */
-.stats-container, .stats-grid, [class*="stats"] {
-    display: flex !important;
-    justify-content: space-between !important;
-    gap: 10px !important;
-    background: #f8f9fa !important;
-    border: 1px dashed #dddddd !important;
-    border-radius: 4px !important;
-    padding: 12px 20px !important;
-}
-
-.stat-item, .stat-box {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-}
-
-.stat-item .val, .stat-box .val {
-    color: #0b70a4 !important;
-    font-weight: 800 !important;
-    font-size: 1.1rem !important;
-}
-
-.stat-item .lbl, .stat-box .lbl {
-    color: #777777 !important;
-    font-size: 0.7rem !important;
-    text-transform: uppercase !important;
-}
-
-/* Блок рекордов под видео */
-.records-section {
-    background: #ffffff !important;
-    border-top: 1px solid #f0f0f0 !important;
-    padding-top: 10px !important;
-}
-
-
 /* ------------------------------------------
-   СПИСОК УРОВНЕЙ ВНИЗУ
+   ОФОРМЛЕНИЕ БЛОКОВ И КАРТОЧЕК
    ------------------------------------------ */
-.level-list, [class*="level-list"] {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-}
 
-.level-card, .level-item {
+/* Все контейнеры в белые рамки */
+.sidebar > div, 
+.level-card, 
+.level-view, 
+div[class*="card"], 
+div[class*="box"] {
     background: #ffffff !important;
     border: 1px dashed #cccccc !important;
     border-radius: 4px !important;
-    padding: 12px 16px !important;
+    padding: 12px 15px !important;
+    box-sizing: border-box !important;
+}
+
+/* Поисковая строка */
+input[type="text"], .search-bar {
+    width: 100% !important;
+    background: #ffffff !important;
+    border: 1px dashed #cccccc !important;
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    margin-bottom: 10px !important;
+}
+
+/* Превьюшки и Видеоплеер */
+iframe, video {
+    width: 100% !important;
+    height: 300px !important;
+    border-radius: 4px !important;
+    border: none !important;
+}
+
+.level-card img {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 120px !important;
+    object-fit: cover !important;
+    border-radius: 3px !important;
+}
+
+/* Статистика (POINTS, QUALIFY, RECORDS) */
+.stats-container, div[class*="stats"] {
     display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    cursor: pointer !important;
-    transition: border-color 0.15s ease !important;
-}
-
-.level-card:hover, .level-card.active {
-    border-style: solid !important;
-    border-color: #0b70a4 !important;
-    border-left: 5px solid #0b70a4 !important;
-}
-
-.level-card .rank {
-    color: #0b70a4 !important;
-    font-weight: 800 !important;
-    font-size: 1.1rem !important;
-    margin-right: 15px !important;
-}
-
-.level-card .title {
-    color: #333333 !important;
-    font-weight: 700 !important;
-    font-size: 1rem !important;
-}
-
-.level-card .author {
-    color: #777777 !important;
-    font-size: 0.85rem !important;
+    justify-content: space-around !important;
+    background: #f8f9fa !important;
+    border: 1px dashed #cccccc !important;
+    padding: 10px !important;
+    border-radius: 4px !important;
+    text-align: center !important;
 }
