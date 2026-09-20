@@ -10,147 +10,142 @@ export default {
         <div v-else class="pointer-wrapper">
             <div class="pointer-layout">
                 
-                <!-- ЛЕВАЯ КОЛОНКА: СПИСОК УРОВНЕЙ С DRAG & DROP -->
+                <!-- ЛЕВАЯ КОЛОНКА: СПИСОК УРОВНЕЙ / ИГРОКОВ -->
                 <div class="list-side">
                     <div 
-                        v-for="(level, index) in list" 
-                        :key="level.id || level.name" 
+                        v-for="(item, index) in filteredList" 
+                        :key="item.id || item.name" 
                         class="pointer-card"
                         :class="{ 
-                            'active': selectedLevel?.name === level.name,
+                            'active': isSelected(item),
                             'dragging': dragIndex === index 
                         }"
                         draggable="true"
                         @dragstart="onDragStart(index, $event)"
                         @dragover.prevent="onDragOver(index)"
                         @drop="onDrop(index)"
-                        @click="selectedLevel = level"
+                        @click="toggleSelectItem(item)"
                     >
-                        <div class="drag-handle" title="Зажми ЛКМ и потяни, чтобы изменить позицию">⣿</div>
+                        <div class="drag-handle" title="Зажми ЛКМ и потяни, чтобы изменить порядок">⣿</div>
                         
-                        <div class="card-thumb">
-                            <img :src="getThumbnail(level)" @error="onThumbError" />
-                        </div>
-                        
-                        <div class="card-text">
-                            <div class="card-title">#{{ index + 1 }} - {{ level.name }}</div>
-                            <div class="card-sub">от <strong>{{ level.author }}</strong> (вер. {{ level.verifier }})</div>
-                            <div class="card-pts">{{ score(index + 1) }} pts — {{ level.percentToQualify || 100 }}% или выше</div>
+                        <!-- ПРЕВЬЮ УРОВНЯ ИЛИ АВАТАРКА -->
+                        <div class="card-thumb" :class="{ 'player-avatar-thumb': item.avatar !== undefined }">
+                            <img :src="getImage(item)" @error="onImageError" alt="Thumb" />
                         </div>
 
-                        <button class="btn-delete" @click.stop="removeLevel(index)" title="Удалить уровень">✕</button>
+                        <!-- ТЕКСТ КАРТОЧКИ -->
+                        <div class="card-text">
+                            <div class="card-title">#{{ index + 1 }} - {{ item.name }}</div>
+                            <div class="card-sub" v-if="item.author">автор: <strong>{{ item.author }}</strong></div>
+                            <div class="card-sub" v-else-if="item.demons">Пройдено демонов: <strong>{{ item.demons.length }}</strong></div>
+                            <div class="card-pts"><strong>{{ item.points || calculatePoints(item) }}</strong> pts</div>
+                        </div>
+
+                        <button class="btn-delete" @click.stop="removeItem(index)" title="Удалить">✕</button>
                     </div>
 
                     <div v-if="list.length === 0" class="empty-msg">
-                        Список уровней пуст. Нажми «Добавить уровень» справа!
+                        Список пуст. Нажми «+ Добавить» справа!
                     </div>
                 </div>
 
-                <!-- ПРАВАЯ КОЛОНКА: ПОИСК, ВИДЕО, АДМИНКА, МОДЕРАТОРЫ, ПРАВИЛА -->
+                <!-- ПРАВАЯ КОЛОНКА: САЙДБАР -->
                 <div class="details-side">
                     
-                    <!-- ПОИСК И КНОПКА СОЗДАНИЯ -->
+                    <!-- ПОИСК И ДОБАВЛЕНИЕ -->
                     <div class="side-box search-box">
                         <input 
                             type="text" 
                             v-model="searchQuery" 
-                            placeholder="Поиск уровней..." 
+                            placeholder="Поиск..." 
                             class="search-input"
                         />
-                        <button class="btn-primary" @click="showAddModal = true">+ Добавить уровень</button>
+                        <button class="btn-primary" @click="showAddModal = true">+ Добавить</button>
                     </div>
 
-                    <!-- ИНФОРМАЦИЯ О ВЫБРАННОМ УРОВНЕ И РЕКОРДЫ -->
-                    <div class="side-box" v-if="selectedLevel">
-                        <h2 class="level-heading">#{{ getLevelRank(selectedLevel) }} {{ selectedLevel.name }}</h2>
-                        <div class="author-info">
-                            <div><span>CREATOR</span> <strong>{{ selectedLevel.author }}</strong></div>
-                            <div><span>VERIFIER</span> <strong>{{ selectedLevel.verifier }}</strong></div>
-                        </div>
-
-                        <div class="video-container" v-if="selectedLevel.ytid">
-                            <iframe 
-                                :src="embed(selectedLevel.ytid)" 
-                                frameborder="0" 
-                                allowfullscreen
-                            ></iframe>
-                        </div>
-
-                        <div class="stats-row">
-                            <div><span>POINTS</span> <strong>{{ score(getLevelRank(selectedLevel)) }}</strong></div>
-                            <div><span>QUALIFY</span> <strong>{{ selectedLevel.percentToQualify || 100 }}%</strong></div>
-                        </div>
-
-                        <!-- РЕКОРДЫ ИГРОКОВ -->
-                        <div class="records-section">
-                            <div class="records-header">
-                                <h4>Прохождения ({{ selectedLevel.records ? selectedLevel.records.length : 0 }})</h4>
-                                <button class="btn-small" @click="showRecordModal = true">+ Рекорд</button>
+                    <!-- ИНФОРМАЦИЯ О ВЫБРАННОМ ЭЛЕМЕНТЕ -->
+                    <div class="side-box" v-if="selectedItem">
+                        
+                        <!-- ЕСЛИ ВЫБРАН ИГРОК -->
+                        <template v-if="selectedItem.avatar !== undefined">
+                            <div class="player-profile-header">
+                                <img :src="getImage(selectedItem)" @error="onImageError" class="profile-avatar" />
+                                <div>
+                                    <h2 class="level-heading" style="margin: 0;">#{{ getItemRank(selectedItem) }} {{ selectedItem.name }}</h2>
+                                    <button class="btn-reset" style="text-align: left; padding: 0; margin-top: 4px;" @click="editAvatar(selectedItem)">Изменить аватарку</button>
+                                </div>
                             </div>
-                            <ul class="records-list" v-if="selectedLevel.records && selectedLevel.records.length">
-                                <li v-for="(rec, rIdx) in selectedLevel.records" :key="rIdx">
-                                    <div class="rec-info">
-                                        <strong>{{ rec.user }}</strong> — {{ rec.percent }}% ({{ rec.hz }}Hz)
-                                    </div>
-                                    <a v-if="rec.link" :href="rec.link" target="_blank" class="rec-link">Видео</a>
-                                    <button class="btn-del-sm" @click="removeRecord(rIdx)">✕</button>
-                                </li>
-                            </ul>
-                            <p v-else class="empty-text">Пока нет подтвержденных рекордов.</p>
-                        </div>
+                            
+                            <div class="stats-row" style="margin-bottom: 15px;">
+                                <div><span>POINTS</span> <strong>{{ selectedItem.points || calculatePoints(selectedItem) }}</strong></div>
+                                <div><span>DEMONS</span> <strong>{{ selectedItem.demons ? selectedItem.demons.length : 0 }}</strong></div>
+                            </div>
+
+                            <div class="records-section">
+                                <div class="records-header">
+                                    <h4>Пройденные уровни</h4>
+                                    <button class="btn-small" @click="showAddRecordModal = true">+ Демон</button>
+                                </div>
+                                <ul class="records-list" v-if="selectedItem.demons && selectedItem.demons.length">
+                                    <li v-for="(dem, dIdx) in selectedItem.demons" :key="dIdx">
+                                        <div class="rec-info">
+                                            <strong>{{ dem.name }}</strong> ({{ dem.percent || 100 }}%)
+                                        </div>
+                                        <button class="btn-del-sm" @click="removeRecord(dIdx)">✕</button>
+                                    </li>
+                                </ul>
+                                <p v-else class="empty-text">Нет прикрепленных прохождений.</p>
+                            </div>
+                        </template>
+
+                        <!-- ЕСЛИ ВЫБРАН УРОВЕНЬ -->
+                        <template v-else>
+                            <h2 class="level-heading">#{{ getItemRank(selectedItem) }} - {{ selectedItem.name }}</h2>
+                            <div class="author-info">
+                                <div><span>Создатель:</span> <strong>{{ selectedItem.author || 'Неизвестно' }}</strong></div>
+                                <div v-if="selectedItem.verifier"><span>Верификатор:</span> <strong>{{ selectedItem.verifier }}</strong></div>
+                            </div>
+
+                            <div class="video-container" v-if="selectedItem.video">
+                                <iframe 
+                                    :src="getEmbedVideo(selectedItem.video)" 
+                                    frameborder="0" 
+                                    allowfullscreen
+                                ></iframe>
+                            </div>
+
+                            <div class="stats-row">
+                                <div><span>ОЧКИ</span> <strong>{{ selectedItem.points || 100 }} pts</strong></div>
+                            </div>
+                        </template>
+
                     </div>
 
-                    <!-- МОДЕРАТОРЫ ЛИСТА -->
-                    <div class="side-box">
-                        <div class="mod-header">
-                            <h3>Модераторы листа</h3>
-                            <button class="btn-small" @click="addModerator">+ Добавить</button>
-                        </div>
-                        <ul class="simple-list" v-if="editors.length">
-                            <li v-for="(editor, i) in editors" :key="i" class="mod-item">
-                                <span>{{ editor }}</span>
-                                <button class="btn-del-sm" @click="removeModerator(i)">✕</button>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <!-- ПРАВИЛА -->
-                    <div class="side-box">
-                        <h3>Правила листа</h3>
-                        <ol class="rules-list">
-                            <li>Запись должна быть с оригинальными кликами/тапами.</li>
-                            <li>Читы и секрет-веи строго запрещены.</li>
-                            <li>Все изменения топа сохраняются у вас локально.</li>
-                        </ol>
-                        <button class="btn-reset" @click="resetToDefault">Сбросить всё к дефолту</button>
+                    <!-- ЕСЛИ НИЧЕГО НЕ ВЫБРАНО (ВЫДЕЛЕНИЕ СНЯТО) -->
+                    <div class="side-box empty-msg" v-else style="text-align: center; color: #888; padding: 30px 15px;">
+                        <p style="margin: 0;">Выберите элемент из списка слева, чтобы просмотреть подробности.</p>
                     </div>
 
                 </div>
 
             </div>
 
-            <!-- МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ УРОВНЯ -->
+            <!-- МОДАЛКА: ДОБАВИТЬ ЭЛЕМЕНТ -->
             <div class="modal-overlay" v-if="showAddModal" @click.self="showAddModal = false">
                 <div class="modal-body">
-                    <h3>Добавить новый уровень в Топ</h3>
-                    <form @submit.prevent="addLevel">
-                        <label>Название уровня:
-                            <input v-model="newLevel.name" required placeholder="например, Tidal Wave" />
+                    <h3>Добавить карточку</h3>
+                    <form @submit.prevent="addItem">
+                        <label>Название / Никнейм:
+                            <input v-model="newItem.name" required placeholder="например, Slaughterhouse или Zoink" />
                         </label>
-                        <label>Создатель (Creator):
-                            <input v-model="newLevel.author" required placeholder="Onilink" />
+                        <label>Автор / Пройдено демонов:
+                            <input v-model="newItem.author" placeholder="IcEDCave или оставь пустым" />
                         </label>
-                        <label>Верификатор (Verifier):
-                            <input v-model="newLevel.verifier" required placeholder="Doggie" />
+                        <label>URL картинки / Превью / Аватарки:
+                            <input v-model="newItem.image" placeholder="https://i.imgur.com/..." />
                         </label>
-                        <label>YouTube Video ID или ссылка:
-                            <input v-model="newLevel.ytid" required placeholder="например, d95jE1v434s" />
-                        </label>
-                        <label>URL кастомной картинки (необязательно):
-                            <input v-model="newLevel.customThumb" placeholder="https://..." />
-                        </label>
-                        <label>% для квалификации:
-                            <input type="number" v-model.number="newLevel.percentToQualify" value="100" />
+                        <label>Очки (pts):
+                            <input type="number" v-model.number="newItem.points" placeholder="1000" />
                         </label>
                         <div class="modal-actions">
                             <button type="submit" class="btn-primary">Сохранить</button>
@@ -160,26 +155,20 @@ export default {
                 </div>
             </div>
 
-            <!-- МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ РЕКОРДА ИГРОКА -->
-            <div class="modal-overlay" v-if="showRecordModal" @click.self="showRecordModal = false">
+            <!-- МОДАЛКА: ДОБАВИТЬ РЕКОРД -->
+            <div class="modal-overlay" v-if="showAddRecordModal" @click.self="showAddRecordModal = false">
                 <div class="modal-body">
-                    <h3>Добавить рекорд игрока</h3>
+                    <h3>Прикрепить уровень</h3>
                     <form @submit.prevent="addRecord">
-                        <label>Никнейм игрока:
-                            <input v-model="newRecord.user" required placeholder="Игрок" />
+                        <label>Название уровня:
+                            <input v-model="newRecord.name" required placeholder="например, Tidal Wave" />
                         </label>
                         <label>Процент прохождения (%):
-                            <input type="number" v-model.number="newRecord.percent" required min="1" max="100" />
-                        </label>
-                        <label>Герцовка (Hz):
-                            <input type="number" v-model.number="newRecord.hz" value="360" />
-                        </label>
-                        <label>Ссылка на видео доказательство:
-                            <input v-model="newRecord.link" placeholder="https://youtube.com/..." />
+                            <input type="number" v-model.number="newRecord.percent" value="100" min="1" max="100" />
                         </label>
                         <div class="modal-actions">
-                            <button type="submit" class="btn-primary">Добавить рекорд</button>
-                            <button type="button" class="btn-secondary" @click="showRecordModal = false">Отмена</button>
+                            <button type="submit" class="btn-primary">Прикрепить</button>
+                            <button type="button" class="btn-secondary" @click="showAddRecordModal = false">Отмена</button>
                         </div>
                     </form>
                 </div>
@@ -190,28 +179,23 @@ export default {
 
     data: () => ({
         list: [],
-        editors: [],
         loading: true,
-        selectedLevel: null,
+        selectedItem: null,
         searchQuery: "",
         dragIndex: null,
         showAddModal: false,
-        showRecordModal: false,
-        newLevel: {
-            name: "",
-            author: "",
-            verifier: "",
-            ytid: "",
-            customThumb: "",
-            percentToQualify: 100
-        },
-        newRecord: {
-            user: "",
-            percent: 100,
-            hz: 360,
-            link: ""
-        }
+        showAddRecordModal: false,
+        newItem: { name: "", author: "", image: "", points: 0 },
+        newRecord: { name: "", percent: 100 }
     }),
+
+    computed: {
+        filteredList() {
+            if (!this.searchQuery) return this.list;
+            const q = this.searchQuery.toLowerCase().trim();
+            return this.list.filter(item => item.name && item.name.toLowerCase().includes(q));
+        }
+    },
 
     mounted() {
         this.loadData();
@@ -219,38 +203,48 @@ export default {
 
     methods: {
         loadData() {
-            // Загрузка из localStorage или дефолтные значения
-            const savedList = localStorage.getItem('custom_demon_list');
-            const savedEditors = localStorage.getItem('custom_editors_list');
+            const savedData = localStorage.getItem('pointercrate_custom_list');
 
-            if (savedList) {
-                this.list = JSON.parse(savedList);
+            if (savedData) {
+                this.list = JSON.parse(savedData);
             } else {
-                // Стартовый демо-список
                 this.list = [
-                    { id: 1, name: "Tidal Wave", author: "Onilink", verifier: "Doggie", ytid: "d95jE1v434s", percentToQualify: 100, records: [] },
-                    { id: 2, name: "Acheron", author: "Ryamu", verifier: "Zoink", ytid: "3547192841", percentToQualify: 100, records: [] }
+                    { id: 1, name: "Slaughterhouse", author: "IcEDCave", image: "https://i.ytimg.com/vi/386sP_7159c/maxresdefault.jpg", points: 350, video: "https://www.youtube.com/watch?v=386sP_7159c" },
+                    { id: 2, name: "Acheron", author: "Ryamu", image: "https://i.ytimg.com/vi/q4_J-sS78Lg/maxresdefault.jpg", points: 330, video: "" },
+                    { id: 3, name: "Silent Clubstep", author: "Sailent", image: "https://i.ytimg.com/vi/2d_eC6B8D1U/maxresdefault.jpg", points: 310, video: "" }
                 ];
             }
 
-            if (savedEditors) {
-                this.editors = JSON.parse(savedEditors);
-            } else {
-                this.editors = ["Главный Модератор", "Твой Ник"];
-            }
-
-            if (this.list.length > 0) {
-                this.selectedLevel = this.list[0];
-            }
+            // Изначально ничего не выбрано
+            this.selectedItem = null;
             this.loading = false;
         },
 
         saveData() {
-            localStorage.setItem('custom_demon_list', JSON.stringify(this.list));
-            localStorage.setItem('custom_editors_list', JSON.stringify(this.editors));
+            localStorage.setItem('pointercrate_custom_list', JSON.stringify(this.list));
         },
 
-        /* DRAG & DROP РЕАЛИЗАЦИЯ */
+        /* ПРОВЕРКА: ВЫБРАН ЛИ ИМЕННО ЭТОТ ЭЛЕМЕНТ В ДАННЫЙ МОМЕНТ */
+        isSelected(item) {
+            if (!this.selectedItem) return false;
+            if (this.selectedItem.id && item.id) {
+                return this.selectedItem.id === item.id;
+            }
+            return this.selectedItem.name === item.name;
+        },
+
+        /* СНЯТИЕ ИЛИ УСТАНОВКА ВЫДЕЛЕНИЯ */
+        toggleSelectItem(item) {
+            if (this.isSelected(item)) {
+                // Если кликнули по УЖЕ выделенному — снимаем выделение полностью
+                this.selectedItem = null;
+            } else {
+                // Иначе выделяем нажатый
+                this.selectedItem = item;
+            }
+        },
+
+        /* DRAG & DROP */
         onDragStart(index, event) {
             this.dragIndex = index;
             event.dataTransfer.effectAllowed = "move";
@@ -268,108 +262,85 @@ export default {
             this.saveData();
         },
 
-        /* УПРАВЛЕНИЕ УРОВНЯМИ */
-        addLevel() {
-            let extractedYtid = this.newLevel.ytid;
-            if (extractedYtid.includes('v=')) {
-                extractedYtid = extractedYtid.split('v=')[1].split('&')[0];
-            } else if (extractedYtid.includes('youtu.be/')) {
-                extractedYtid = extractedYtid.split('youtu.be/')[1].split('?')[0];
-            }
+        /* ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ */
+        getImage(item) {
+            if (item.image) return item.image;
+            if (item.avatar) return item.avatar;
+            return 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
+        },
 
-            const levelObj = {
+        onImageError(e) {
+            e.target.src = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
+        },
+
+        getEmbedVideo(url) {
+            if (!url) return '';
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : url;
+        },
+
+        editAvatar(item) {
+            const newUrl = prompt("Введите новый URL аватарки/картинки:", item.avatar || item.image || "");
+            if (newUrl !== null) {
+                if (item.avatar !== undefined) item.avatar = newUrl.trim();
+                else item.image = newUrl.trim();
+                this.saveData();
+            }
+        },
+
+        addItem() {
+            const obj = {
                 id: Date.now(),
-                name: this.newLevel.name,
-                author: this.newLevel.author,
-                verifier: this.newLevel.verifier,
-                ytid: extractedYtid,
-                customThumb: this.newLevel.customThumb,
-                percentToQualify: this.newLevel.percentToQualify || 100,
-                records: []
+                name: this.newItem.name,
+                author: this.newItem.author,
+                image: this.newItem.image,
+                points: this.newItem.points || 100
             };
 
-            this.list.push(levelObj);
-            this.selectedLevel = levelObj;
+            this.list.push(obj);
+            this.selectedItem = obj;
             this.saveData();
 
             this.showAddModal = false;
-            this.newLevel = { name: "", author: "", verifier: "", ytid: "", customThumb: "", percentToQualify: 100 };
+            this.newItem = { name: "", author: "", image: "", points: 0 };
         },
 
-        removeLevel(index) {
-            if (confirm(`Удалить уровень "${this.list[index].name}" из топа?`)) {
-                const isSelected = this.selectedLevel === this.list[index];
-                this.list.splice(index, 1);
-                if (isSelected) {
-                    this.selectedLevel = this.list[0] || null;
+        removeItem(index) {
+            if (confirm(`Удалить "${this.list[index].name}"?`)) {
+                const item = this.list[index];
+                if (this.isSelected(item)) {
+                    this.selectedItem = null;
                 }
+                this.list.splice(index, 1);
                 this.saveData();
             }
         },
 
-        /* УПРАВЛЕНИЕ РЕКОРДАМИ */
         addRecord() {
-            if (!this.selectedLevel) return;
-            if (!this.selectedLevel.records) this.selectedLevel.records = [];
+            if (!this.selectedItem) return;
+            if (!this.selectedItem.demons) this.selectedItem.demons = [];
 
-            this.selectedLevel.records.push({ ...this.newRecord });
+            this.selectedItem.demons.push({ ...this.newRecord });
             this.saveData();
 
-            this.showRecordModal = false;
-            this.newRecord = { user: "", percent: 100, hz: 360, link: "" };
+            this.showAddRecordModal = false;
+            this.newRecord = { name: "", percent: 100 };
         },
 
         removeRecord(rIdx) {
-            if (this.selectedLevel && this.selectedLevel.records) {
-                this.selectedLevel.records.splice(rIdx, 1);
+            if (this.selectedItem && this.selectedItem.demons) {
+                this.selectedItem.demons.splice(rIdx, 1);
                 this.saveData();
             }
         },
 
-        /* УПРАВЛЕНИЕ МОДЕРАТОРАМИ */
-        addModerator() {
-            const name = prompt("Введите имя нового модератора:");
-            if (name && name.trim()) {
-                this.editors.push(name.trim());
-                this.saveData();
-            }
+        getItemRank(item) {
+            return this.list.findIndex(i => (i.id ? i.id === item.id : i.name === item.name)) + 1;
         },
 
-        removeModerator(index) {
-            this.editors.splice(index, 1);
-            this.saveData();
-        },
-
-        resetToDefault() {
-            if (confirm("Вы уверены, что хотите сбросить весь список к начальному виду? Все добавленные уровни удалятся.")) {
-                localStorage.removeItem('custom_demon_list');
-                localStorage.removeItem('custom_editors_list');
-                this.loadData();
-            }
-        },
-
-        /* ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ */
-        getLevelRank(level) {
-            return this.list.findIndex(l => l === level) + 1;
-        },
-
-        embed(ytid) {
-            return ytid ? `https://www.youtube.com/embed/${ytid}` : '';
-        },
-
-        getThumbnail(level) {
-            if (level.customThumb) return level.customThumb;
-            if (level.ytid) return `https://i.ytimg.com/vi/${level.ytid}/hqdefault.jpg`;
-            return 'https://i.imgur.com/6VBx3io.png';
-        },
-
-        onThumbError(e) {
-            e.target.src = 'https://i.imgur.com/6VBx3io.png';
-        },
-
-        score(rank) {
-            if (!rank || rank < 1) return 0;
-            return Math.max(100 - (rank - 1) * 2, 5);
+        calculatePoints(item) {
+            return item.demons ? item.demons.length * 100 : 0;
         }
     }
 };
