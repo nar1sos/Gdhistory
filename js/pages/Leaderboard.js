@@ -8,9 +8,29 @@ export default {
         </main>
 
         <div v-else class="pointer-wrapper">
-            <div class="pointer-layout">
+            
+            <!-- ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК: ИГРОКИ / ТОП СТРАН -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button 
+                    class="btn-primary" 
+                    :style="{ opacity: activeTab === 'players' ? 1 : 0.5 }"
+                    @click="activeTab = 'players'"
+                >
+                    👤 Топ игроков
+                </button>
+                <button 
+                    class="btn-primary" 
+                    :style="{ opacity: activeTab === 'countries' ? 1 : 0.5 }"
+                    @click="activeTab = 'countries'"
+                >
+                    🌐 Топ стран
+                </button>
+            </div>
+
+            <!-- ВКЛАДКА 1: ТОП ИГРОКОВ (РУЧНОЙ ДРАГ-ЭНД-ДРОП) -->
+            <div v-if="activeTab === 'players'" class="pointer-layout">
                 
-                <!-- ЛЕВАЯ КОЛОНКА: ЛИДЕРБОРД С АВАТАРКАМИ, ФЛАГАМИ И DRAG & DROP -->
+                <!-- ЛЕВАЯ КОЛОНКА: ЛИДЕРБОРД -->
                 <div class="list-side">
                     <div 
                         v-for="(player, index) in filteredLeaderboard" 
@@ -26,21 +46,18 @@ export default {
                         @drop="onDrop(index)"
                         @click="selectedPlayer = player"
                     >
-                        <div class="drag-handle" title="Зажми ЛКМ и потяни, чтобы изменить ранг">⣿</div>
+                        <div class="drag-handle" title="Зажми ЛКМ и потяни, чтобы изменить место">⣿</div>
                         
-                        <!-- АВАТАРКА ИГРОКА В СПИСКЕ -->
                         <div class="card-thumb player-avatar-thumb">
                             <img :src="getAvatar(player)" @error="onAvatarError" alt="Avatar" />
                         </div>
 
                         <div class="card-text">
                             <div class="card-title">
-                                <!-- ФЛАГ ИГРОКА В СПИСКЕ -->
                                 <img v-if="player.country" :src="getFlagUrl(player.country)" class="flag-icon" :title="player.country.toUpperCase()" style="width: 20px; height: 14px; margin-right: 6px; vertical-align: middle; border-radius: 2px;" />
                                 #{{ index + 1 }} - {{ player.name }}
                             </div>
                             <div class="card-sub">Пройдено демонов: <strong>{{ player.demons ? player.demons.length : 0 }}</strong></div>
-                            <div class="card-pts"><strong>{{ player.points || calculatePoints(player) }}</strong> pts</div>
                         </div>
 
                         <button class="btn-delete" @click.stop="removePlayer(index)" title="Удалить игрока">✕</button>
@@ -54,7 +71,6 @@ export default {
                 <!-- ПРАВАЯ КОЛОНКА: ПОИСК, ПРОФИЛЬ ИГРОКА, АДМИНКА -->
                 <div class="details-side">
                     
-                    <!-- ПОИСК И ДОБАВЛЕНИЕ ИГРОКА -->
                     <div class="side-box search-box">
                         <input 
                             type="text" 
@@ -65,7 +81,6 @@ export default {
                         <button class="btn-primary" @click="showAddPlayerModal = true">+ Добавить игрока</button>
                     </div>
 
-                    <!-- ИНФОРМАЦИЯ О ВЫБРАННОМ ИГРОКЕ -->
                     <div class="side-box" v-if="selectedPlayer">
                         <div class="player-profile-header" style="display: flex; gap: 12px; align-items: center;">
                             <img :src="getAvatar(selectedPlayer)" @error="onAvatarError" class="profile-avatar" />
@@ -83,11 +98,9 @@ export default {
                         </div>
                         
                         <div class="stats-row" style="margin-bottom: 15px; margin-top: 15px;">
-                            <div><span>POINTS</span> <strong>{{ selectedPlayer.points || calculatePoints(selectedPlayer) }}</strong></div>
-                            <div><span>DEMONS</span> <strong>{{ selectedPlayer.demons ? selectedPlayer.demons.length : 0 }}</strong></div>
+                            <div><span>ДЕМОНЫ</span> <strong>{{ selectedPlayer.demons ? selectedPlayer.demons.length : 0 }}</strong></div>
                         </div>
 
-                        <!-- СПИСОК ПРОЙДЕННЫХ УРОВНЕЙ ИГРОКА -->
                         <div class="records-section">
                             <div class="records-header">
                                 <h4>Пройденные уровни</h4>
@@ -109,6 +122,38 @@ export default {
 
             </div>
 
+            <!-- ВКЛАДКА 2: ТОП СТРАН (ПО КОЛИЧЕСТВУ ИГРОКОВ / ДЕМОНОВ) -->
+            <div v-if="activeTab === 'countries'" class="pointer-layout">
+                <div class="list-side" style="width: 100%;">
+                    <div 
+                        v-for="(c, index) in countryLeaderboard" 
+                        :key="c.code" 
+                        class="pointer-card"
+                        style="cursor: default;"
+                    >
+                        <img 
+                            :src="getFlagUrl(c.code)" 
+                            style="width: 32px; height: 22px; margin-right: 12px; border-radius: 3px;" 
+                        />
+                        <div class="card-text" style="flex: 1;">
+                            <div class="card-title" style="font-size: 1.1rem;">
+                                #{{ index + 1 }} - {{ c.code.toUpperCase() }}
+                            </div>
+                            <div class="card-sub">
+                                Игроков: <strong>{{ c.playersCount }}</strong> | Всего прохождений: <strong>{{ c.totalDemons }}</strong>
+                            </div>
+                            <div class="card-sub" style="margin-top: 4px; color: #888;">
+                                Игроки: {{ c.playerNames.join(', ') }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="countryLeaderboard.length === 0" class="empty-msg">
+                        У игроков не указаны страны. Укажите код страны в профиле игрока!
+                    </div>
+                </div>
+            </div>
+
             <!-- МОДАЛКА: ДОБАВИТЬ ИГРОКА -->
             <div class="modal-overlay" v-if="showAddPlayerModal" @click.self="showAddPlayerModal = false">
                 <div class="modal-body">
@@ -117,14 +162,11 @@ export default {
                         <label>Никнейм игрока:
                             <input v-model="newPlayer.name" required placeholder="например, Zoink" />
                         </label>
-                        <label>Код страны (например: ru, us, ua, kr, de, jp):
+                        <label>Код страны (например: ru, us, ua, kr, de):
                             <input v-model="newPlayer.country" placeholder="us" style="text-transform: lowercase;" maxLength="2" />
                         </label>
                         <label>URL аватарки (картинка):
                             <input v-model="newPlayer.avatar" placeholder="https://i.imgur.com/..." />
-                        </label>
-                        <label>Начальные очки (pts):
-                            <input type="number" v-model.number="newPlayer.points" placeholder="1000" />
                         </label>
                         <div class="modal-actions">
                             <button type="submit" class="btn-primary">Сохранить</button>
@@ -157,6 +199,7 @@ export default {
     `,
 
     data: () => ({
+        activeTab: "players",
         leaderboard: [],
         loading: true,
         selectedPlayer: null,
@@ -164,7 +207,7 @@ export default {
         dragIndex: null,
         showAddPlayerModal: false,
         showAddDemonModal: false,
-        newPlayer: { name: "", country: "", avatar: "", points: 0 },
+        newPlayer: { name: "", country: "", avatar: "" },
         newDemon: { name: "", percent: "100" }
     }),
 
@@ -173,6 +216,32 @@ export default {
             if (!this.searchQuery) return this.leaderboard;
             const q = this.searchQuery.toLowerCase().trim();
             return this.leaderboard.filter(p => p.name && p.name.toLowerCase().includes(q));
+        },
+
+        /* ТОП СТРАН СОРТИРУЕТСЯ ПО КОЛИЧЕСТВУ ИГРОКОВ В ТОПЕ */
+        countryLeaderboard() {
+            const countriesMap = {};
+
+            this.leaderboard.forEach(player => {
+                if (!player.country) return;
+                const code = player.country.toLowerCase().trim();
+                const demonCount = player.demons ? player.demons.length : 0;
+
+                if (!countriesMap[code]) {
+                    countriesMap[code] = {
+                        code,
+                        totalDemons: 0,
+                        playersCount: 0,
+                        playerNames: []
+                    };
+                }
+
+                countriesMap[code].totalDemons += demonCount;
+                countriesMap[code].playersCount += 1;
+                countriesMap[code].playerNames.push(player.name);
+            });
+
+            return Object.values(countriesMap).sort((a, b) => b.playersCount - a.playersCount || b.totalDemons - a.totalDemons);
         }
     },
 
@@ -188,9 +257,9 @@ export default {
                 this.leaderboard = JSON.parse(savedLeaderboard);
             } else {
                 this.leaderboard = [
-                    { id: 1, name: "Твой Ник (Топ 1)", country: "ru", avatar: "", points: 2500, demons: [{ name: "Tidal Wave", percent: "100" }] },
-                    { id: 2, name: "Zoink", country: "us", avatar: "", points: 2100, demons: [{ name: "Acheron", percent: "33-100" }] },
-                    { id: 3, name: "Doggie", country: "us", avatar: "", points: 1800, demons: [{ name: "Grief", percent: "100" }] }
+                    { id: 1, name: "Твой Ник (Топ 1)", country: "ru", avatar: "", demons: [{ name: "Tidal Wave", percent: "100" }] },
+                    { id: 2, name: "Zoink", country: "us", avatar: "", demons: [{ name: "Acheron", percent: "33-100" }] },
+                    { id: 3, name: "Doggie", country: "us", avatar: "", demons: [{ name: "Grief", percent: "100" }] }
                 ];
             }
 
@@ -210,7 +279,6 @@ export default {
             return str.endsWith('%') ? str : `${str}%`;
         },
 
-        /* ФЛАГИ ИЗОБРАЖЕНИЙ */
         getFlagUrl(countryCode) {
             if (!countryCode) return '';
             const code = countryCode.toLowerCase().trim();
@@ -225,7 +293,7 @@ export default {
             }
         },
 
-        /* DRAG & DROP */
+        /* DRAG & DROP ДЛЯ ИЗМЕНЕНИЯ МЕСТА */
         onDragStart(index, event) {
             this.dragIndex = index;
             event.dataTransfer.effectAllowed = "move";
@@ -250,7 +318,6 @@ export default {
                 name: this.newPlayer.name,
                 country: this.newPlayer.country ? this.newPlayer.country.toLowerCase().trim() : "",
                 avatar: this.newPlayer.avatar,
-                points: this.newPlayer.points || 0,
                 demons: []
             };
 
@@ -259,7 +326,7 @@ export default {
             this.saveData();
 
             this.showAddPlayerModal = false;
-            this.newPlayer = { name: "", country: "", avatar: "", points: 0 };
+            this.newPlayer = { name: "", country: "", avatar: "" };
         },
 
         editAvatar(player) {
@@ -325,10 +392,6 @@ export default {
 
         getPlayerRank(player) {
             return this.leaderboard.findIndex(p => p === player) + 1;
-        },
-
-        calculatePoints(player) {
-            return player.demons ? player.demons.length * 100 : 0;
         }
     }
 };
