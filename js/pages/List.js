@@ -9,153 +9,116 @@ export default {
         </main>
 
         <div v-else class="gdl-wrapper">
-            <!-- ПОИСК -->
-            <div class="gdl-search-bar">
-                <div class="search-input-wrapper">
-                    <span class="search-icon">🔍</span>
-                    <input 
-                        type="text" 
-                        v-model="searchQuery" 
-                        placeholder="Search levels or authors..." 
-                        class="gdl-input"
-                    />
-                    <button v-if="searchQuery" @click="searchQuery = ''" class="clear-btn">✕</button>
-                </div>
-            </div>
-
-            <!-- СЕТКА -->
+            <!-- ДВЕ КОЛОНКИ (1 В 1 КАК НА POINTERCRATE) -->
             <div class="gdl-content-grid">
                 
-                <!-- ЛЕВАЯ КОЛОНКА -->
+                <!-- ЛЕВАЯ КОЛОНКА (СПИСОК УРОВНЕЙ) -->
                 <div class="gdl-left-column">
+                    <div class="gdl-cards-container">
+                        <div 
+                            v-for="level in filteredList" 
+                            :key="level.path || level.rank" 
+                            class="gdl-level-card"
+                            :class="{ 'active': selectedLevel?.name === level.name }"
+                            @click="selectedLevel = level"
+                        >
+                            <div class="gdl-card-thumb">
+                                <img :src="getThumbnail(level.ytid)" @error="onThumbError" />
+                            </div>
+                            <div class="gdl-card-info">
+                                <div class="card-header">
+                                    <h3 class="level-title">#{{ level.rank }} - {{ level.name }}</h3>
+                                </div>
+                                <div class="card-authors">
+                                    опубликован <strong>{{ level.author }}</strong>
+                                </div>
+                                <div class="card-points">
+                                    <span>{{ score(level.rank) }} pts</span> — {{ level.percentToQualify || 100 }}% или выше
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="filteredList.length === 0" style="color: #64748b; text-align: center; padding: 20px;">
+                            Уровень не найден.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ПРАВАЯ КОЛОНКА (ИНФО, МОДЕРАТОРЫ, ПРАВИЛА, ПОИСК) -->
+                <div class="gdl-right-column">
+                    
+                    <!-- ПОИСК СРАЗУ СВЕРХУ -->
+                    <div class="gdl-search-bar">
+                        <div class="search-input-wrapper">
+                            <input 
+                                type="text" 
+                                v-model="searchQuery" 
+                                placeholder="Поиск уровней..." 
+                                class="gdl-input"
+                            />
+                            <button v-if="searchQuery" @click="searchQuery = ''" class="clear-btn">✕</button>
+                        </div>
+                    </div>
+
+                    <!-- ДЕТАЛИ И ВИДЕО УРОВНЯ -->
+                    <div class="gdl-details-container" v-if="selectedLevel">
+                        <div class="gdl-level-detail-box">
+                            <h2 class="detail-title">#{{ selectedLevel.rank }} {{ selectedLevel.name }}</h2>
+
+                            <div class="authors-clean-block">
+                                <div class="author-item">
+                                    <span class="author-label">CREATOR</span>
+                                    <span class="author-val">{{ selectedLevel.author }}</span>
+                                </div>
+                                <div class="author-item">
+                                    <span class="author-label">VERIFIER</span>
+                                    <span class="author-val verifier-name">{{ selectedLevel.verifier }}</span>
+                                </div>
+                            </div>
+
+                            <!-- ВИДЕО -->
+                            <div class="video-wrapper" v-if="selectedLevel.ytid">
+                                <iframe 
+                                    :src="embed(selectedLevel.ytid)" 
+                                    frameborder="0" 
+                                    allowfullscreen
+                                ></iframe>
+                            </div>
+
+                            <!-- СТАТИСТИКА -->
+                            <div class="gdl-stats-grid">
+                                <div class="stat-item">
+                                    <span class="stat-label">POINTS</span>
+                                    <span class="stat-value">{{ score(selectedLevel.rank) }}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">QUALIFY</span>
+                                    <span class="stat-value">{{ selectedLevel.percentToQualify || 100 }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- МОДЕРАТОРЫ -->
                     <div class="gdl-meta-box">
-                        <h3>List Editors</h3>
+                        <h3>Модераторы листа</h3>
                         <ul class="editors-list" v-if="editors.length">
                             <li v-for="(editor, i) in editors" :key="i">
-                                <span class="role-icon">🛡️</span>
                                 <span>{{ editor.name || editor }}</span>
                             </li>
                         </ul>
-                        <p v-else style="color: #64748b; font-size: 13px;">No editors listed.</p>
-
-                        <div class="rules-section">
-                            <h3>Rules</h3>
-                            <ul class="rules-list">
-                                <li><strong>1.</strong> Records must have video proof with clicks/taps.</li>
-                                <li><strong>2.</strong> Raw footage must be available if requested.</li>
-                                <li><strong>3.</strong> Hacks or secret ways are strictly prohibited.</li>
-                            </ul>
-                        </div>
+                        <p v-else style="color: #64748b; font-size: 13px;">Нет модераторов.</p>
                     </div>
-                </div>
 
-                <!-- ЦЕНТРАЛЬНАЯ КОЛОНКА -->
-                <div class="gdl-cards-container">
-                    <div 
-                        v-for="level in filteredList" 
-                        :key="level.path || level.rank" 
-                        class="gdl-level-card"
-                        :class="{ 'active': selectedLevel?.name === level.name }"
-                        @click="selectedLevel = level"
-                    >
-                        <div class="gdl-card-thumb">
-                            <img :src="getThumbnail(level.ytid)" @error="onThumbError" />
-                            <span class="rank-badge">#{{ level.rank }}</span>
-                        </div>
-                        <div class="gdl-card-info">
-                            <div class="card-header">
-                                <span class="rank-number">#{{ level.rank }}</span>
-                                <h3 class="level-title">{{ level.name }}</h3>
-                            </div>
-                            <div class="card-authors">
-                                By <strong>{{ level.author }}</strong>
-                            </div>
-                            <div class="card-authors">
-                                Verified by <span class="verifier-name">{{ level.verifier }}</span>
-                            </div>
-                            <div class="card-points">
-                                <span class="points-max">{{ score(level.rank) }} pts</span>
-                            </div>
-                        </div>
+                    <!-- ПРАВИЛА -->
+                    <div class="gdl-meta-box rules-section">
+                        <h3>Правила</h3>
+                        <ul class="rules-list">
+                            <li><strong>1.</strong> Records must have video proof with clicks/taps.</li>
+                            <li><strong>2.</strong> Raw footage must be available if requested.</li>
+                            <li><strong>3.</strong> Hacks or secret ways are strictly prohibited.</li>
+                        </ul>
                     </div>
-                    <div v-if="filteredList.length === 0" style="color: #64748b; text-align: center; padding: 20px;">
-                        No levels found.
-                    </div>
-                </div>
 
-                <!-- ПРАВАЯ КОЛОНКА -->
-                <div class="gdl-details-container" v-if="selectedLevel">
-                    <div class="gdl-level-detail-box">
-                        <h2 class="detail-title">#{{ selectedLevel.rank }} {{ selectedLevel.name }}</h2>
-
-                        <div class="authors-clean-block">
-                            <div class="author-item">
-                                <span class="author-label">CREATOR</span>
-                                <span class="author-val">{{ selectedLevel.author }}</span>
-                            </div>
-                            <div class="author-item">
-                                <span class="author-label">VERIFIER</span>
-                                <span class="author-val verifier-name">{{ selectedLevel.verifier }}</span>
-                            </div>
-                        </div>
-
-                        <!-- ВИДЕО -->
-                        <div class="video-wrapper" v-if="selectedLevel.ytid">
-                            <iframe 
-                                :src="embed(selectedLevel.ytid)" 
-                                frameborder="0" 
-                                allowfullscreen
-                            ></iframe>
-                        </div>
-
-                        <!-- СТАТИСТИКА -->
-                        <div class="gdl-stats-grid">
-                            <div class="stat-item">
-                                <span class="stat-label">POINTS</span>
-                                <span class="stat-value">{{ score(selectedLevel.rank) }}</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">QUALIFY</span>
-                                <span class="stat-value">{{ selectedLevel.percentToQualify || 100 }}%</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">RECORDS</span>
-                                <span class="stat-value">{{ recordsList.length }}</span>
-                            </div>
-                        </div>
-
-                        <!-- РЕКОРДЫ -->
-                        <div class="records-section">
-                            <div class="records-header">
-                                <span class="records-trophy">🏆</span>
-                                <div class="records-header-text">
-                                    <h3 class="section-subtitle">Records</h3>
-                                    <p class="records-count-info">
-                                        <span class="highlight-100">{{ selectedLevel.percentToQualify || 100 }}%</span> required to qualify
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="records-list" v-if="recordsList.length">
-                                <div 
-                                    v-for="(rec, idx) in recordsList" 
-                                    :key="idx" 
-                                    class="record-card"
-                                >
-                                    <div class="record-user-info">
-                                        <span class="user-name">{{ rec.user || rec.name }}</span>
-                                    </div>
-                                    <div class="record-meta-info">
-                                        <span class="percent-tag">{{ rec.percent }}% ({{ rec.hz || 60 }}Hz)</span>
-                                        <a v-if="rec.link" :href="rec.link" target="_blank" class="record-video-btn" title="Watch video">
-                                            ▶
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <p v-else class="no-records">No records on this level yet.</p>
-                        </div>
-                    </div>
                 </div>
 
             </div>
