@@ -10,42 +10,51 @@ export default {
         <div v-else class="pointer-wrapper">
             <div class="pointer-layout">
                 
-                <!-- ЛЕВАЯ КОЛОНКА: СПИСОК ИГРОКОВ (В СТИЛЕ POINTERCRATE) -->
+                <!-- ЛЕВАЯ КОЛОНКА: ЛИДЕРБОРД С АВАТАРКАМИ, ФЛАГАМИ И DRAG & DROP -->
                 <div class="list-side">
                     <div 
-                        v-for="(player, index) in sortedList" 
+                        v-for="(player, index) in filteredLeaderboard" 
                         :key="player.id || player.name" 
                         class="pointer-card"
-                        :class="{ 'active': isSelected(player) }"
-                        @click="toggleSelectPlayer(player)"
+                        :class="{ 
+                            'active': selectedPlayer?.name === player.name,
+                            'dragging': dragIndex === index 
+                        }"
+                        draggable="true"
+                        @dragstart="onDragStart(index, $event)"
+                        @dragover.prevent="onDragOver(index)"
+                        @drop="onDrop(index)"
+                        @click="selectedPlayer = player"
                     >
-                        <!-- АВАТАРКА -->
-                        <div class="card-thumb player-thumb">
-                            <img :src="getAvatar(player)" @error="onImageError" alt="Avatar" />
+                        <div class="drag-handle" title="Зажми ЛКМ и потяни, чтобы изменить ранг">⣿</div>
+                        
+                        <!-- АВАТАРКА ИГРОКА В СПИСКЕ -->
+                        <div class="card-thumb player-avatar-thumb">
+                            <img :src="getAvatar(player)" @error="onAvatarError" alt="Avatar" />
                         </div>
 
-                        <!-- ТЕКСТ КАРТОЧКИ -->
                         <div class="card-text">
                             <div class="card-title">
-                                <img v-if="player.country" :src="getFlagUrl(player.country)" class="flag-icon" :title="player.country.toUpperCase()" />
+                                <!-- ФЛАГ ИГРОКА В СПИСКЕ -->
+                                <img v-if="player.country" :src="getFlagUrl(player.country)" class="flag-icon" :title="player.country.toUpperCase()" style="width: 20px; height: 14px; margin-right: 6px; vertical-align: middle; border-radius: 2px;" />
                                 #{{ index + 1 }} - {{ player.name }}
                             </div>
-                            <div class="card-sub">Пройдено: <strong>{{ player.demons ? player.demons.length : 0 }} демонов</strong></div>
-                            <div class="card-pts"><strong>{{ player.points || 0 }}</strong> pts</div>
+                            <div class="card-sub">Пройдено демонов: <strong>{{ player.demons ? player.demons.length : 0 }}</strong></div>
+                            <div class="card-pts"><strong>{{ player.points || calculatePoints(player) }}</strong> pts</div>
                         </div>
 
-                        <button class="btn-delete" @click.stop="removePlayer(player)" title="Удалить">✕</button>
+                        <button class="btn-delete" @click.stop="removePlayer(index)" title="Удалить игрока">✕</button>
                     </div>
 
-                    <div v-if="sortedList.length === 0" class="empty-msg">
-                        Игроки не найдены.
+                    <div v-if="leaderboard.length === 0" class="empty-msg">
+                        Лидерборд пуст. Нажми «+ Добавить игрока» справа!
                     </div>
                 </div>
 
-                <!-- ПРАВАЯ КОЛОНКА: САЙДБАР (ПОИСК И ИНФО О ВЫБРАННОМ) -->
+                <!-- ПРАВАЯ КОЛОНКА: ПОИСК, ПРОФИЛЬ ИГРОКА, АДМИНКА -->
                 <div class="details-side">
                     
-                    <!-- ПОИСК И ДОБАВЛЕНИЕ -->
+                    <!-- ПОИСК И ДОБАВЛЕНИЕ ИГРОКА -->
                     <div class="side-box search-box">
                         <input 
                             type="text" 
@@ -53,22 +62,32 @@ export default {
                             placeholder="Поиск игрока..." 
                             class="search-input"
                         />
-                        <button class="btn-primary" @click="showAddModal = true">+ Добавить</button>
+                        <button class="btn-primary" @click="showAddPlayerModal = true">+ Добавить игрока</button>
                     </div>
 
                     <!-- ИНФОРМАЦИЯ О ВЫБРАННОМ ИГРОКЕ -->
                     <div class="side-box" v-if="selectedPlayer">
-                        <div class="player-profile-header">
-                            <img v-if="selectedPlayer.country" :src="getFlagUrl(selectedPlayer.country)" class="flag-icon-large" />
-                            <h2 class="level-heading" style="margin: 0;">#{{ getPlayerRank(selectedPlayer) }} {{ selectedPlayer.name }}</h2>
+                        <div class="player-profile-header" style="display: flex; gap: 12px; align-items: center;">
+                            <img :src="getAvatar(selectedPlayer)" @error="onAvatarError" class="profile-avatar" />
+                            <div>
+                                <h2 class="level-heading" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <img v-if="selectedPlayer.country" :src="getFlagUrl(selectedPlayer.country)" style="width: 24px; height: 17px; border-radius: 2px;" :title="selectedPlayer.country.toUpperCase()" />
+                                    #{{ getPlayerRank(selectedPlayer) }} {{ selectedPlayer.name }}
+                                </h2>
+                                <div style="display: flex; gap: 10px; margin-top: 4px;">
+                                    <button class="btn-reset" style="padding: 0;" @click="editAvatar(selectedPlayer)">Изменить аватарку</button>
+                                    <span style="color: #555;">|</span>
+                                    <button class="btn-reset" style="padding: 0;" @click="editCountry(selectedPlayer)">Изменить страну</button>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="stats-row" style="margin: 15px 0;">
-                            <div><span>POINTS</span> <strong>{{ selectedPlayer.points || 0 }}</strong></div>
+                        <div class="stats-row" style="margin-bottom: 15px; margin-top: 15px;">
+                            <div><span>POINTS</span> <strong>{{ selectedPlayer.points || calculatePoints(selectedPlayer) }}</strong></div>
                             <div><span>DEMONS</span> <strong>{{ selectedPlayer.demons ? selectedPlayer.demons.length : 0 }}</strong></div>
                         </div>
 
-                        <!-- СПИСОК ПРОЙДЕННЫХ УРОВНЕЙ -->
+                        <!-- СПИСОК ПРОЙДЕННЫХ УРОВНЕЙ ИГРОКА -->
                         <div class="records-section">
                             <div class="records-header">
                                 <h4>Пройденные уровни</h4>
@@ -79,19 +98,11 @@ export default {
                                     <div class="rec-info">
                                         <strong>{{ dem.name }}</strong> ({{ dem.percent || 100 }}%)
                                     </div>
-                                    <div style="display: flex; gap: 8px; align-items: center;">
-                                        <a v-if="dem.video" :href="dem.video" target="_blank" class="rec-link">Пруф ↗</a>
-                                        <button class="btn-del-sm" @click="removeDemon(dIdx)">✕</button>
-                                    </div>
+                                    <button class="btn-del-sm" @click="removeDemonFromPlayer(dIdx)">✕</button>
                                 </li>
                             </ul>
-                            <p v-else class="empty-text">Нет зачтённых прохождений.</p>
+                            <p v-else class="empty-text">Нет прикрепленных прохождений.</p>
                         </div>
-                    </div>
-
-                    <!-- ЕСЛИ ВЫДЕЛЕНИЕ СНЯТО (НИЧЕГО НЕ ВЫБРАНО) -->
-                    <div class="side-box empty-msg" v-else style="text-align: center; color: #888; padding: 30px 15px;">
-                        <p style="margin: 0;">Выберите игрока из списка слева, чтобы просмотреть подробности.</p>
                     </div>
 
                 </div>
@@ -99,49 +110,43 @@ export default {
             </div>
 
             <!-- МОДАЛКА: ДОБАВИТЬ ИГРОКА -->
-            <div class="modal-overlay" v-if="showAddModal" @click.self="showAddModal = false">
+            <div class="modal-overlay" v-if="showAddPlayerModal" @click.self="showAddPlayerModal = false">
                 <div class="modal-body">
-                    <h3>Добавить игрока</h3>
+                    <h3>Добавить игрока в Leaderboard</h3>
                     <form @submit.prevent="addPlayer">
                         <label>Никнейм игрока:
                             <input v-model="newPlayer.name" required placeholder="например, Zoink" />
                         </label>
-                        <label>Код страны (например: ru, us, ua, kr, de):
+                        <label>Код страны (например: ru, us, ua, kr, de, jp):
                             <input v-model="newPlayer.country" placeholder="us" style="text-transform: lowercase;" maxLength="2" />
                         </label>
-                        <label>Ссылка на аватарку (опционально):
+                        <label>URL аватарки (картинка):
                             <input v-model="newPlayer.avatar" placeholder="https://i.imgur.com/..." />
                         </label>
-                        <label>Очки (pts):
+                        <label>Начальные очки (pts):
                             <input type="number" v-model.number="newPlayer.points" placeholder="1000" />
                         </label>
                         <div class="modal-actions">
                             <button type="submit" class="btn-primary">Сохранить</button>
-                            <button type="button" class="btn-secondary" @click="showAddModal = false">Отмена</button>
+                            <button type="button" class="btn-secondary" @click="showAddPlayerModal = false">Отмена</button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- МОДАЛКА: ДОБАВИТЬ ДЕМОН -->
+            <!-- МОДАЛКА: ДОБАВИТЬ ДЕМОН ИГРОКУ -->
             <div class="modal-overlay" v-if="showAddDemonModal" @click.self="showAddDemonModal = false">
                 <div class="modal-body">
-                    <h3>Прикрепить уровень игроку</h3>
+                    <h3>Прикрепить пройденный демон</h3>
                     <form @submit.prevent="addDemonToPlayer">
                         <label>Название уровня:
-                            <input v-model="newDemon.name" required placeholder="Tidal Wave" />
+                            <input v-model="newDemon.name" required placeholder="например, Tidal Wave" />
                         </label>
-                        <label>Процент (%):
-                            <input type="number" v-model.number="newDemon.percent" value="100" min="1" max="100" required />
-                        </label>
-                        <label>Очки за прохождение:
-                            <input type="number" v-model.number="newDemon.points" placeholder="350" required />
-                        </label>
-                        <label>Ссылка на видео:
-                            <input v-model="newDemon.video" placeholder="https://youtu.be/..." />
+                        <label>Процент прохождения (%):
+                            <input type="number" v-model.number="newDemon.percent" value="100" min="1" max="100" />
                         </label>
                         <div class="modal-actions">
-                            <button type="submit" class="btn-primary">Добавить</button>
+                            <button type="submit" class="btn-primary">Прикрепить</button>
                             <button type="button" class="btn-secondary" @click="showAddDemonModal = false">Отмена</button>
                         </div>
                     </form>
@@ -152,25 +157,22 @@ export default {
     `,
 
     data: () => ({
-        list: [],
+        leaderboard: [],
         loading: true,
         selectedPlayer: null,
         searchQuery: "",
-        showAddModal: false,
+        dragIndex: null,
+        showAddPlayerModal: false,
         showAddDemonModal: false,
         newPlayer: { name: "", country: "", avatar: "", points: 0 },
-        newDemon: { name: "", percent: 100, points: 100, video: "" }
+        newDemon: { name: "", percent: 100 }
     }),
 
     computed: {
-        sortedList() {
-            let res = [...this.list];
-            if (this.searchQuery) {
-                const q = this.searchQuery.toLowerCase().trim();
-                res = res.filter(item => item.name && item.name.toLowerCase().includes(q));
-            }
-            // Сортировка по очкам от большего к меньшему
-            return res.sort((a, b) => (b.points || 0) - (a.points || 0));
+        filteredLeaderboard() {
+            if (!this.searchQuery) return this.leaderboard;
+            const q = this.searchQuery.toLowerCase().trim();
+            return this.leaderboard.filter(p => p.name && p.name.toLowerCase().includes(q));
         }
     },
 
@@ -180,85 +182,64 @@ export default {
 
     methods: {
         loadData() {
-            const savedData = localStorage.getItem('pointercrate_leaderboard');
+            const savedLeaderboard = localStorage.getItem('custom_leaderboard');
 
-            if (savedData) {
-                this.list = JSON.parse(savedData);
+            if (savedLeaderboard) {
+                this.leaderboard = JSON.parse(savedLeaderboard);
             } else {
-                this.list = [
-                    { 
-                        id: 1, 
-                        name: "Zoink", 
-                        country: "us",
-                        avatar: "", 
-                        points: 3500,
-                        demons: [
-                            { name: "Tidal Wave", percent: 100, points: 500, video: "https://youtu.be/..." },
-                            { name: "Acheron", percent: 100, points: 450, video: "https://youtu.be/..." }
-                        ]
-                    },
-                    { 
-                        id: 2, 
-                        name: "Doggie", 
-                        country: "us",
-                        avatar: "", 
-                        points: 2900,
-                        demons: [
-                            { name: "Slaughterhouse", percent: 100, points: 400, video: "https://youtu.be/..." }
-                        ]
-                    },
-                    { 
-                        id: 3, 
-                        name: "Trick", 
-                        country: "us",
-                        avatar: "", 
-                        points: 2750,
-                        demons: []
-                    }
+                this.leaderboard = [
+                    { id: 1, name: "Твой Ник (Топ 1)", country: "ru", avatar: "", points: 2500, demons: [{ name: "Tidal Wave", percent: 100 }] },
+                    { id: 2, name: "Zoink", country: "us", avatar: "", points: 2100, demons: [{ name: "Acheron", percent: 100 }] },
+                    { id: 3, name: "Doggie", country: "us", avatar: "", points: 1800, demons: [{ name: "Grief", percent: 100 }] }
                 ];
             }
 
-            this.selectedPlayer = null;
+            if (this.leaderboard.length > 0) {
+                this.selectedPlayer = this.leaderboard[0];
+            }
             this.loading = false;
         },
 
         saveData() {
-            localStorage.setItem('pointercrate_leaderboard', JSON.stringify(this.list));
+            localStorage.setItem('custom_leaderboard', JSON.stringify(this.leaderboard));
         },
 
+        /* ФЛАГИ ИЗОБРАЖЕНИЙ */
         getFlagUrl(countryCode) {
             if (!countryCode) return '';
             const code = countryCode.toLowerCase().trim();
             return `https://flagcdn.com/24x18/${code}.png`;
         },
 
-        getAvatar(player) {
-            if (player.avatar && player.avatar.trim() !== "") {
-                return player.avatar.trim();
-            }
-            return 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
-        },
-
-        onImageError(e) {
-            e.target.src = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
-        },
-
-        isSelected(player) {
-            if (!this.selectedPlayer) return false;
-            return this.selectedPlayer.id ? (this.selectedPlayer.id === player.id) : (this.selectedPlayer.name === player.name);
-        },
-
-        toggleSelectPlayer(player) {
-            if (this.isSelected(player)) {
-                // Повторный клик снимает выделение и очищает правую панель
-                this.selectedPlayer = null;
-            } else {
-                this.selectedPlayer = player;
+        editCountry(player) {
+            const newCountry = prompt("Введите 2-буквенный код страны (например: ru, us, ua, kr, de):", player.country || "");
+            if (newCountry !== null) {
+                player.country = newCountry.toLowerCase().trim();
+                this.saveData();
             }
         },
 
+        /* DRAG & DROP */
+        onDragStart(index, event) {
+            this.dragIndex = index;
+            event.dataTransfer.effectAllowed = "move";
+        },
+
+        onDragOver(index) {
+            if (this.dragIndex === null || this.dragIndex === index) return;
+            const movedPlayer = this.leaderboard.splice(this.dragIndex, 1)[0];
+            this.leaderboard.splice(index, 0, movedPlayer);
+            this.dragIndex = index;
+        },
+
+        onDrop() {
+            this.dragIndex = null;
+            this.saveData();
+        },
+
+        /* ИГРОКИ И АВАТАРКИ */
         addPlayer() {
-            const obj = {
+            const playerObj = {
                 id: Date.now(),
                 name: this.newPlayer.name,
                 country: this.newPlayer.country ? this.newPlayer.country.toLowerCase().trim() : "",
@@ -267,49 +248,67 @@ export default {
                 demons: []
             };
 
-            this.list.push(obj);
-            this.selectedPlayer = obj;
+            this.leaderboard.push(playerObj);
+            this.selectedPlayer = playerObj;
             this.saveData();
 
-            this.showAddModal = false;
+            this.showAddPlayerModal = false;
             this.newPlayer = { name: "", country: "", avatar: "", points: 0 };
         },
 
-        removePlayer(playerToRemove) {
-            if (confirm(`Удалить игрока "${playerToRemove.name}"?`)) {
-                if (this.isSelected(playerToRemove)) {
-                    this.selectedPlayer = null;
-                }
-                this.list = this.list.filter(p => p !== playerToRemove);
+        editAvatar(player) {
+            const newUrl = prompt("Введите новый URL аватарки:", player.avatar || "");
+            if (newUrl !== null) {
+                player.avatar = newUrl.trim();
                 this.saveData();
             }
         },
 
+        getAvatar(player) {
+            if (player && player.avatar) return player.avatar;
+            return 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
+        },
+
+        onAvatarError(e) {
+            e.target.src = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
+        },
+
+        removePlayer(index) {
+            if (confirm(`Удалить игрока "${this.leaderboard[index].name}" из лидерборда?`)) {
+                const isSelected = this.selectedPlayer === this.leaderboard[index];
+                this.leaderboard.splice(index, 1);
+                if (isSelected) {
+                    this.selectedPlayer = this.leaderboard[0] || null;
+                }
+                this.saveData();
+            }
+        },
+
+        /* ДЕМОНЫ */
         addDemonToPlayer() {
             if (!this.selectedPlayer) return;
             if (!this.selectedPlayer.demons) this.selectedPlayer.demons = [];
 
             this.selectedPlayer.demons.push({ ...this.newDemon });
-            this.selectedPlayer.points = (this.selectedPlayer.points || 0) + (this.newDemon.points || 0);
-
             this.saveData();
 
             this.showAddDemonModal = false;
-            this.newDemon = { name: "", percent: 100, points: 100, video: "" };
+            this.newDemon = { name: "", percent: 100 };
         },
 
-        removeDemon(dIdx) {
+        removeDemonFromPlayer(dIdx) {
             if (this.selectedPlayer && this.selectedPlayer.demons) {
-                const removed = this.selectedPlayer.demons.splice(dIdx, 1)[0];
-                if (removed && removed.points) {
-                    this.selectedPlayer.points = Math.max(0, (this.selectedPlayer.points || 0) - removed.points);
-                }
+                this.selectedPlayer.demons.splice(dIdx, 1);
                 this.saveData();
             }
         },
 
         getPlayerRank(player) {
-            return this.sortedList.findIndex(i => (i.id ? i.id === player.id : i.name === player.name)) + 1;
+            return this.leaderboard.findIndex(p => p === player) + 1;
+        },
+
+        calculatePoints(player) {
+            return player.demons ? player.demons.length * 100 : 0;
         }
     }
 };
